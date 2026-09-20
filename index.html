@@ -1,0 +1,890 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>今日 · 我的计划中枢</title>
+<style>
+:root{
+  --bg:#0e1116; --card:#171b23; --card2:#1e232d; --line:#2a3140;
+  --fg:#e8edf5; --dim:#8b96a8; --dim2:#5f6b7d;
+  --green:#3ddc84; --blue:#5aa9ff; --amber:#ffb547; --red:#ff6b6b; --violet:#b48cff;
+  --safe: env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--fg);
+  font:15px/1.55 -apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue","Microsoft YaHei",sans-serif}
+body{padding-bottom:calc(64px + var(--safe))}
+a{color:var(--blue)}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input,select{font:inherit}
+
+#hdr{position:sticky;top:0;z-index:20;background:linear-gradient(180deg,#12161d,#0e1116);
+  border-bottom:1px solid var(--line);padding:10px 14px 8px}
+.hd1{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.hd-date{font-size:20px;font-weight:700;letter-spacing:.3px}
+.hd-wk{font-size:14px;color:var(--blue);font-weight:600}
+.hd2{margin-top:3px;font-size:12.5px;color:var(--dim);display:flex;gap:10px;flex-wrap:wrap}
+.hd2 b{color:var(--fg);font-weight:600}
+.hd-ev{margin-top:7px;display:flex;gap:6px;flex-wrap:wrap}
+.ev{font-size:11.5px;padding:3px 8px;border-radius:999px;border:1px solid;}
+.ev.hard{color:var(--red);border-color:#5a2626;background:#2a1416}
+.ev.exam{color:var(--amber);border-color:#5a441f;background:#2a2113}
+.ev.class{color:var(--blue);border-color:#1f3d5c;background:#111f2e}
+.ev.plan{color:var(--violet);border-color:#3d2f5c;background:#1c1730}
+
+main{padding:12px 12px 4px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px 14px;margin-bottom:11px}
+.card h3{margin:0 0 4px;font-size:15px;display:flex;align-items:center;gap:7px}
+.card .sub{font-size:12.5px;color:var(--dim);margin-bottom:10px}
+.row{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line)}
+.row:first-of-type{border-top:0}
+.num{flex:0 0 auto;font-variant-numeric:tabular-nums;font-weight:700}
+.lab{flex:1;min-width:0}
+.tiny{font-size:11.5px;color:var(--dim2)}
+.ok{color:var(--green)}.no{color:var(--dim2)}.warn{color:var(--amber)}.bad{color:var(--red)}
+.chip{display:inline-block;font-size:11px;padding:2px 7px;border-radius:999px;border:1px solid var(--line);color:var(--dim)}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  padding:8px 13px;border-radius:10px;background:var(--card2);border:1px solid var(--line);font-size:13.5px}
+.btn:active{transform:scale(.97)}
+.btn.pri{background:#14432c;border-color:#1f6b46;color:#c9ffe2}
+.btn.on{background:#3a1f1f;border-color:#7a3535;color:#ffd6d6}
+.btn.wide{width:100%;padding:13px;font-size:16px;font-weight:700}
+.btn[disabled]{opacity:.45}
+.big{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:.5px}
+.two{display:flex;gap:8px}.two>*{flex:1}
+
+body.hasc{padding-bottom:calc(168px + var(--safe))}
+#ck{display:none;position:fixed;left:0;right:0;bottom:calc(64px + var(--safe));z-index:15;
+  padding:8px 12px 10px;background:#12161df2;backdrop-filter:blur(8px);border-top:1px solid var(--line)}
+#ck .l{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--dim);margin-bottom:8px;flex-wrap:wrap}
+#ck .l span{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:2px 8px;white-space:nowrap}
+#ck .l span.ok{color:var(--green);border-color:#1f6b46;background:#12291d}
+#ck .l i{width:7px;height:7px;border-radius:50%;background:var(--dim2);display:inline-block;margin-right:4px}
+#ck .l i.g{background:var(--green)}
+#ck .self{font-size:11px;color:var(--blue);text-decoration:underline;margin-bottom:7px;display:inline-block}
+#tabs{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;
+  background:#12161d;border-top:1px solid var(--line);padding-bottom:var(--safe)}
+#tabs button{flex:1;padding:9px 0 10px;font-size:11.5px;color:var(--dim2);display:flex;
+  flex-direction:column;align-items:center;gap:2px}
+#tabs button .ico{font-size:17px;line-height:1}
+#tabs button.on{color:var(--green)}
+
+.subwrap{position:fixed;inset:0;z-index:40;background:var(--bg);display:none;overflow:auto;padding-bottom:24px}
+.subwrap.show{display:block}
+.subnav{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px;
+  padding:11px 14px;background:#12161dee;backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.subnav .bk{font-size:20px;line-height:1;padding:2px 6px;color:var(--green)}
+.subnav .ttl{font-size:15px;font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.subbody{padding:13px 14px}
+
+.sent{display:flex;gap:9px;padding:8px 0;border-top:1px solid var(--line);align-items:flex-start}
+.sent:first-child{border-top:0}
+.sent .ix{flex:0 0 20px;font-size:11px;color:var(--dim2);padding-top:2px}
+.sent .tx{flex:1;min-width:0;font-size:13.5px;word-break:break-word}
+.sent.now .tx{color:#062;background:#3ddc84;border-radius:6px;padding:1px 5px;margin:-1px -5px;color:#052e1a;font-weight:700}
+.sent .tag{font-size:10.5px;color:var(--dim2);border:1px solid var(--line);border-radius:999px;padding:1px 6px;flex:0 0 auto}
+
+.en{font-size:15.5px;line-height:1.5}
+.zh{font-size:12.5px;color:var(--dim);margin-top:2px}
+.q{border-left:3px solid var(--green);padding-left:10px;margin:11px 0}
+
+.cal{width:100%;border-collapse:collapse}
+.cal th{font-size:11px;color:var(--dim2);font-weight:500;padding:4px 0}
+.cal td{padding:0;text-align:center}
+.cell{position:relative;height:44px;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;border-radius:9px;font-size:13.5px;font-variant-numeric:tabular-nums}
+.cell.today{outline:2px solid var(--blue)}
+.cell.mute{color:var(--dim2);opacity:.45}
+.dots{display:flex;gap:2px;margin-top:2px;height:6px}
+.dots i{width:5px;height:5px;border-radius:50%}
+.dots i.g{background:var(--green)}.dots i.a{background:var(--amber)}
+.dots i.b{background:var(--blue)}.dots i.r{background:var(--red)}
+.cell.ck{background:#12301f}
+
+.bar{height:7px;background:var(--card2);border-radius:99px;overflow:hidden;margin:6px 0}
+.bar>i{display:block;height:100%;background:var(--green)}
+.heat{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}
+.heat i{aspect-ratio:1;border-radius:4px;background:var(--card2)}
+.heat i.g{background:var(--green)}
+.heat i.b{background:#2b4a2f}
+
+#toast{position:fixed;left:50%;bottom:calc(140px + var(--safe));transform:translateX(-50%);
+  background:#000000e0;color:#fff;padding:9px 15px;border-radius:999px;font-size:13px;
+  z-index:99;opacity:0;pointer-events:none;transition:opacity .2s;max-width:86vw;text-align:center}
+#toast.show{opacity:1}
+.sw{display:flex;gap:6px}
+.sw button{flex:1;padding:8px;border:1px solid var(--line);border-radius:9px;font-size:13px;background:var(--card2)}
+.sw button.on{border-color:var(--green);color:#c9ffe2;background:#14432c}
+.kv{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:13.5px}
+.kv:first-child{border-top:0}
+.kv span:last-child{color:var(--dim)}
+</style>
+</head>
+<body>
+
+<header id="hdr">
+  <div class="hd1"><span class="hd-date" id="hDate">—</span><span class="hd-wk" id="hWk"></span></div>
+  <div class="hd2" id="hSub"></div>
+  <div class="hd-ev" id="hEv"></div>
+</header>
+
+<main id="main"></main>
+
+<div id="ck"></div>
+
+<nav id="tabs">
+  <button data-t="today"><span class="ico">📌</span>今天</button>
+  <button data-t="cal"><span class="ico">📅</span>日历</button>
+  <button data-t="plan"><span class="ico">🗂</span>计划</button>
+  <button data-t="prog"><span class="ico">📈</span>进度</button>
+  <button data-t="set"><span class="ico">⚙️</span>设置</button>
+</nav>
+
+<div class="subwrap" id="sub">
+  <div class="subnav"><button class="bk" id="subBack">‹</button><div class="ttl" id="subTtl">—</div></div>
+  <div class="subbody" id="subBody"></div>
+</div>
+
+<div id="toast"></div>
+<audio id="au" preload="none"></audio>
+
+<script>
+/* 自动生成：口语 30 天数据（源自 kai30） */
+const K30=[{"d":1,"md":"9/14","t":"自我介绍骨架","out":"3 句版自我介绍：Who I am / What I do / Why here","ask":"Hi, I'm Alan from Shanghai. Let me practise introducing myself. Ask me about my work first.","mat":"saic","seg":1,"sk":[["I work in data security at a retail platform.","我在一家零售平台做数据安全。"],["My background is in audit and risk.","我的背景是审计和风险。"],["I'm here to work across borders.","我来这里是为了做跨境的事。"]],"traps":[["我在一家零售平台做数据安全","I work in data security at a retail platform"],["我是做审计出身的","I started as an auditor"]]},{"d":2,"md":"9/15","t":"我的工作：数据安全做什么","out":"60 秒讲清我的岗位","ask":"Let's talk about my job in data security. Ask me what I actually do every day.","mat":"saic","seg":2,"sk":[["I'm responsible for our data security programme.","我负责公司的数据安全项目。"],["Day to day, I review risks and work with engineers.","日常我评估风险，和工程师一起干活。"],["The main challenge is balancing speed and control.","最大的挑战是平衡速度和管控。"]],"traps":[["我负责集团的隐私合规","I'm responsible for privacy compliance across the group"],["这涉及大量跨部门协调","It involves a lot of cross-team coordination"]]},{"d":3,"md":"9/16","t":"我的背景：审计 → 数据安全","out":"60 秒转折故事","ask":"I want to tell the story of how I moved from audit into data security. Ask me why I switched.","mat":"saic","seg":3,"sk":[["I started as an auditor.","我最初是做审计的。"],["Then I moved into data security.","后来我转到数据安全。"],["I made the switch because I wanted to fix problems earlier.","我转行是因为想更早介入问题。"]],"traps":[["我转行是想更早介入问题","I switched because I wanted to get involved earlier"],["这段经历给了我不同视角","That gave me a different angle"]]},{"d":4,"md":"9/17","t":"为什么读 MBA","out":"60 秒动机陈述","ask":"Ask me why I decided to do an MBA and what I'm hoping to get out of it.","mat":"saic","seg":4,"sk":[["I decided to do an MBA.","我决定读 MBA。"],["The reason is I want a broader business view.","原因是我想有更宽的业务视角。"],["Long term, I want to lead cross-border projects.","长期我想负责跨境项目。"]],"traps":[["我想要更宽的商业视角","I'm looking for a broader business perspective"],["长期我想负责跨境项目","Long term, I want to lead cross-border projects"]]},{"d":5,"md":"9/18","t":"我的公司和行业","out":"60 秒行业简介","ask":"Let's talk about my industry — instant retail and e-commerce in China. Ask me how it's changing.","mat":"saic","seg":5,"sk":[["The company I work for is a large retail platform.","我所在的公司是一家大型零售平台。"],["We're in the business of instant retail.","我们做的是即时零售。"],["The industry is changing fast, especially with AI.","这个行业变化很快，尤其是 AI。"]],"traps":[["我们是做即时零售的","We're in the business of instant retail"],["跟五年前比，一切都数据驱动了","Compared with five years ago, everything is data-driven"]]},{"d":6,"md":"9/19","t":"保底版（今天有政治课+开卷考）","out":"60 秒自我介绍初稿（今天只做 60 分钟）","ask":"Quick session today — I only have an hour. Start with: ask me to introduce myself in 60 seconds.","mat":"saic","seg":6,"sk":[["I have an exam today, so I can only practise for an hour.","我今天有考试，只能练一小时。"],["Let me keep it short and simple.","我练短一点、简单一点。"],["I'll do the introduction again tomorrow.","自我介绍我明天再来一遍。"]],"traps":[["我今天有考试，所以只能练一小时","I have an exam today, so I can only practise for an hour"]]},{"d":7,"md":"9/20","t":"验收 1：无稿 60 秒","out":"不看稿 60 秒自我介绍，卡壳 ≤3 次","ask":"Time for my Day 7 check. Interview me like a classmate meeting me for the first time.","mat":"saic","seg":1,"sk":[["Who I am: I'm Alan, and I work in data security.","我是谁：我是 Alan，做数据安全。"],["What I do: I'm responsible for our data security programme.","我做什么：我负责公司的数据安全项目。"],["Why I'm here: I want to work across borders.","我为什么在这：我想做跨境的事。"]],"traps":[["我卡壳的时候会停下来","I tend to freeze when I get stuck"],["让我重新说一遍","Let me try that again"]]},{"d":8,"md":"9/21","t":"话题① 数据安全为什么是商业问题","out":"2 分钟独白（第 1 遍：先写 10 句）","ask":"Topic: why data security is a business issue, not just an IT issue. Let me speak first, then ask me questions.","mat":"r3","seg":1,"sk":[["Data security is a business issue, not just an IT issue.","数据安全是商业问题，不只是 IT 问题。"],["A breach can lose customer trust overnight.","一次泄露能一夜之间丢掉客户信任。"],["That's why it belongs on the management agenda.","所以它应该进管理层议程。"]],"traps":[["数据泄露会一夜之间丢掉客户信任","A breach can lose customer trust overnight"],["它应该进入管理层议程","It belongs on the management agenda"]]},{"d":9,"md":"9/22","t":"话题① 加固（去掉稿子）","out":"2 分钟独白（第 2 遍：只看关键词）","ask":"Ask me the same question as yesterday: why is data security a business issue? Push me if I'm vague.","mat":"r3","seg":2,"sk":[["Let me give the conclusion first, then the reason.","我先说结论，再给理由。"],["The main thing is: trust is a business asset.","主要是：信任是商业资产。"],["For example, we now review every new vendor.","比如，我们现在每个新供应商都要审。"]],"traps":[["我先说结论，再给理由","Let me give the conclusion first, then the reason"],["举个我们自己的例子","Let me use an example from our own company"]]},{"d":10,"md":"9/23","t":"话题② 合规：从成本变成资产","out":"2 分钟独白（第 1 遍：先写 10 句）","ask":"Topic: compliance turning from a cost into an asset. Let me speak for two minutes, then question me.","mat":"r3","seg":3,"sk":[["It used to be seen as a cost centre.","过去它被看作成本中心。"],["Now people see it as an asset.","现在人们把它看作资产。"],["In the long run, trust is cheaper than fines.","长期看，信任比罚款便宜。"]],"traps":[["过去它被看作成本中心","It used to be seen as a cost centre"],["长期看，信任比罚款便宜","In the long run, trust is cheaper than fines"]]},{"d":11,"md":"9/24","t":"话题② 加固","out":"2 分钟独白（第 2 遍：脱稿）","ask":"Challenge my view that compliance can be an advantage. Disagree with me and make me defend it.","mat":"r3","seg":4,"sk":[["I'd argue that compliance is a competitive advantage.","我认为合规是一种竞争优势。"],["Companies that invest early avoid the mess later.","早投入的公司在后面就少收拾烂摊子。"],["So for me, doing it early pays off.","所以对我来说，早做是划算的。"]],"traps":[["我不太同意这个说法，因为……","I'm not sure I agree, because…"],["让我把它说得更具体一点","Let me be more specific"]]},{"d":12,"md":"9/25","t":"话题③ AI 时代还需要审计吗","out":"2 分钟独白（第 1 遍）","ask":"Topic: do we still need auditing in the age of AI? Let me answer first, then interrogate me.","mat":"r3","seg":5,"sk":[["AI changes what we do, not whether we do it.","AI 改变我们做什么，不是要不要做。"],["What matters is who is accountable.","重要的是谁来负责。"],["We still need to check the output.","我们仍然需要检查输出。"]],"traps":[["AI 改变的是做什么，不是要不要做","AI changes what we do, not whether we do it"],["重要的是谁来负责","What matters is who is accountable"]]},{"d":13,"md":"9/26","t":"话题③ 加固","out":"2 分钟独白（第 2 遍：脱稿）","ask":"Ask me: what did your company learn from deploying an AI model? Make me tell a concrete story.","mat":"r3","seg":6,"sk":[["In my case, we deployed a model last year.","就我而言，我们去年上线了一个模型。"],["The lesson was to involve risk early.","教训是要早点让风控介入。"],["Since then, we run a quick review first.","从那以后我们先做快速评估。"]],"traps":[["去年我们上线了一个模型","In my case, we deployed a model last year"],["从那以后我们先做快速评估","Since then, we run a quick review first"]]},{"d":14,"md":"9/27","t":"验收 2：2 分钟专业独白","out":"任选一题，2 分钟无稿","ask":"Day 14 check. Pick one of my three topics at random and interview me for 5 minutes.","mat":"r3","seg":1,"sk":[["Let me take one of the three topics.","我从三个话题里挑一个。"],["I'll give my point first, then the reason.","我先给观点，再给理由。"],["That's my view. Does that make sense?","这就是我的看法，说得通吗？"]],"traps":[["给我两秒钟想一下","Give me a second to think"],["我换个说法","Let me put it another way"]]},{"d":15,"md":"9/28","t":"案例 A：SAIC-双龙英文复述","out":"90 秒案例复述","ask":"I'll retell the SAIC–SsangYong case in English. Listen, then ask me what I think they got wrong.","mat":"r6","seg":1,"sk":[["This is the SAIC and SsangYong case from 2004.","这是 2004 年上汽和双龙的案例。"],["The acquisition failed because integration was rushed.","这次收购失败是因为整合太仓促。"],["The lesson was to involve risk early.","教训是要早点让风控介入。"]],"traps":[["这次并购失败是因为整合太仓促","The acquisition failed because integration was rushed"],["表面上看起来是价格问题","On the surface it looked like a price problem"]]},{"d":16,"md":"9/29","t":"案例 A：加观点","out":"90 秒复述 + 90 秒观点","ask":"Disagree with my take on the SAIC case. Play a classmate who thinks culture was a convenient excuse.","mat":"r6","seg":2,"sk":[["Building on what you said, I'd add one thing.","接着你说的，我补充一点。"],["I think the real issue is leadership.","我认为真正的问题是领导力。"],["If I were them, I'd have kept the local team.","如果我是他们，我会保留本地团队。"]],"traps":[["我认为真正的问题是领导力","I think the real issue is leadership"],["如果我是他们，我会保留本地团队","If I were them, I'd have kept the local team"]]},{"d":17,"md":"9/30","t":"案例 B：美的-库卡 + 霍夫斯泰德","out":"90 秒观点（用六维度说）","ask":"Let's discuss the Midea–KUKA case using Hofstede's six dimensions. Ask me which dimension mattered most.","mat":"r6","seg":3,"sk":[["Let me use Hofstede's six dimensions.","我用霍夫斯泰德六个维度来看。"],["The dimension that stands out is power distance.","最突出的一维是权力距离。"],["That explains why meetings felt so different.","这就解释了为什么开会感觉完全不同。"]],"traps":[["最突出的一维是权力距离","The dimension that stands out is power distance"],["这就解释了为什么开会感觉完全不同","That explains why meetings felt so different"]]},{"d":18,"md":"10/1","t":"案例 B：加固 + 两案对比","out":"2 分钟对比两个案例","ask":"Compare the two cases for me. Ask me: why did one fail and one work?","mat":"r6","seg":4,"sk":[["Both cases show culture was underestimated.","两个案例都显示文化被低估了。"],["One worked and one failed. The difference is pace.","一个成了一个没成，差别在节奏。"],["So the key variable is how you stage the integration.","所以关键变量是你怎么分阶段整合。"]],"traps":[["两者的共同点是……","What they have in common is…"],["关键变量是整合的节奏","So the key variable is the pace of integration"]]},{"d":19,"md":"10/2","t":"提问训练：会问才有存在感","out":"写出并说出 3 个英文问题","ask":"Now reverse it: I ask the questions. Play a guest speaker who just gave a talk, and let me interview you.","mat":"r6","seg":5,"sk":[["Could you elaborate on that?","能展开说说吗？"],["How does that work in practice?","这在实践中怎么运作？"],["What's the implication for our team?","这对我们团队意味着什么？"]],"traps":[["我想追问一下","May I ask a follow-up?"],["这对我们学校的情况意味着什么？","What's the implication for our school?"]]},{"d":20,"md":"10/3","t":"同意 / 反对的礼貌说法","out":"90 秒「我有不同看法」","ask":"Take a position I'll disagree with, and make me disagree politely three times.","mat":"r6","seg":6,"sk":[["That's a good point, and I'd add one thing.","说得好，我补充一点。"],["I see it differently, though.","不过我的看法不同。"],["That may be true, but it misses the cost.","这可能是对的，但它忽略了成本。"]],"traps":[["这可能是对的，但它忽略了成本","That may be true, but it misses the cost"],["这是一种看法，但我更倾向于……","That's one way to look at it, but I lean towards…"]]},{"d":21,"md":"10/4","t":"验收 3：完整英文问题","out":"说出 3 个完整、自然的英文问题","ask":"Day 21 check. Give me a short talk on any business topic, and I'll ask you three real questions.","mat":"r6","seg":1,"sk":[["Let me make sure I got that right.","我确认一下我没理解错。"],["So you mean the cost was the trigger?","你是说成本是导火索？"],["What's your take on that?","你怎么看这件事？"]],"traps":[["我确认一下我理解得对不对","Let me make sure I got that right"],["你能再展开说一下吗？","Could you elaborate on that?"]]},{"d":22,"md":"10/5","t":"救场句：听不懂也不崩","out":"故意被快语速轰炸 30 分钟不崩","ask":"From now on speak fast and don't slow down. I'll try to keep up and use my rescue sentences.","mat":"r8","seg":1,"sk":[["Sorry, I didn't catch that.","抱歉，我没听清。"],["Could you say that again, a bit slower?","能再说一遍，慢一点吗？"],["Let me make sure I got that right.","我确认一下我没理解错。"]],"traps":[["抱歉，我没听清","Sorry, I didn't catch that"],["我没太跟上，能换个说法吗？","I'm not sure I follow — could you rephrase?"]]},{"d":23,"md":"10/6","t":"接半句：听不懂也能参与","out":"用「半句接话」参与 10 次","ask":"Keep talking fast. I'll jump in with half sentences instead of full answers. Test me.","mat":"r8","seg":2,"sk":[["Right, and that's the part nobody plans for.","对，而且这部分没人提前规划。"],["Can I jump in here?","我能插一句吗？"],["That makes sense, and it applies here too.","有道理，而且这里也适用。"]],"traps":[["对，而且……","Right, and…"],["我能插一句吗？","Can I jump in here?"]]},{"d":24,"md":"10/7","t":"即兴训练（3 × 60 秒）","out":"3 个随机题，各直说 60 秒，不准备","ask":"Give me three random business questions, one at a time. I'll answer each in 60 seconds with no preparation.","mat":"r8","seg":3,"sk":[["Let me think out loud.","我边想边说。"],["Three things come to mind.","我想到三点。"],["Honestly, I'm not sure, but I'd start with the data.","说实话我不确定，但我会从数据开始。"]],"traps":[["我边想边说","Let me think out loud"],["简单说，主要是……","To put it simply, the main thing is…"]]},{"d":25,"md":"10/8","t":"即兴训练（加难度）","out":"3 个随机题 + 每题被追问 2 次","ask":"Three random questions, and after each answer challenge me twice with 'Why?' and 'Give an example.'","mat":"r7","seg":1,"sk":[["The main reason is cost.","主要原因是成本。"],["Let me give you a concrete case.","我举个具体的例子。"],["So that's why I think so.","所以我认为是这样。"]],"traps":[["主要原因是……","The main reason is…"],["我举个具体例子","Let me give you a concrete case"]]},{"d":26,"md":"10/9","t":"全真模拟：被老师点名","out":"模拟「Liu, what do you think?」2 轮","ask":"Act as a professor who suddenly calls on me: 'Liu, what do you think about this case?' Do it twice.","mat":"r7","seg":2,"sk":[["Thank you, professor. That's an interesting question.","谢谢老师，这是个有意思的问题。"],["I'd approach it from two sides.","我从两方面看。"],["From the data side, and from the business side.","从数据角度，还有从业务角度。"]],"traps":[["这是个有意思的问题","That's an interesting question"],["我从两方面看这个问题","I'd approach it from two sides"]]},{"d":27,"md":"10/10","t":"全真模拟：被追问「为什么」","out":"连续扛住 3 次追问","ask":"Ask me one question and then push me three times with 'Why?'. Don't let me off easy.","mat":"r7","seg":3,"sk":[["The main reason is the cost of trust.","主要原因是信任的成本。"],["That's based on my own experience.","这是基于我自己的经验。"],["If I may add one more thing.","我再补一点。"]],"traps":[["基于我自己的经验……","That's based on my own experience"],["我再补一点","If I may add one more thing"]]},{"d":28,"md":"10/11","t":"模拟小组讨论：连说 3 轮","out":"小组讨论录音，发言 ≥3 轮","ask":"Simulate a four-person group discussion. Play three classmates. Interrupt me, and make sure I speak at least three times.","mat":"r5","seg":1,"sk":[["Can I jump in here?","我能插一句吗？"],["Building on what he said, I'd add one thing.","接着他说的，我补充一点。"],["I'd push back on that a little.","我对此有点异议。"]],"traps":[["我能插一句吗？","Can I jump in here?"],["接着他说的，我补充一点","Building on what he said, I'd add…"]]},{"d":29,"md":"10/12","t":"回听对比 + 抽 50 句应急卡","out":"抽出 50 句「我真会用」的句子","ask":"Listen to my summary, then tell me what was unclear and ask me three checking questions.","mat":"r5","seg":2,"sk":[["My go-to sentence is: let me think out loud.","我最常用的说法是：我边想边说。"],["The biggest change this month is I speak first, then fix it.","这个月最大的变化是我先说出来，再修。"],["I'm still not perfect, but I keep going.","我还不完美，但我在继续。"]],"traps":[["我最常用的说法是……","My go-to sentence is…"],["这个月最大的变化是……","The biggest change this month is…"]]},{"d":30,"md":"10/13","t":"结业：3 分钟自由陈述","out":"自选题目，连续说 3 分钟不中断","ask":"Final session. Pick any business topic you like, interview me for 10 minutes, and don't go easy.","mat":"r5","seg":3,"sk":[["Let me pick a topic and speak for three minutes.","我挑个话题说三分钟。"],["First, second, third.","第一，第二，第三。"],["To sum up, speaking is now a habit, not a task.","总结一下，开口现在是习惯，不是任务。"]],"traps":[["我还不完美，但是……","I'm still not perfect, but…"],["现在我先把话说出来，再修","Now I speak first, then fix it"]]}];
+const K30AUDIO={"1":{"ava":{"f":"audio/ava/d01.mp3","sec":116.8,"t":[[0.0,1.44],[2.14,11.04],[11.74,18.68],[19.38,24.59],[25.29,28.32],[29.02,31.44],[32.14,34.01],[34.71,38.6],[39.3,41.08],[41.78,47.9],[48.6,52.42],[53.12,56.69],[57.39,62.41],[63.11,71.08],[71.78,81.09],[81.79,92.66],[93.36,99.56],[100.26,103.35],[104.05,106.05],[106.75,109.72],[110.42,113.11],[113.81,116.09]]},"andrew":{"f":"audio/andrew/d01.mp3","sec":118.3,"t":[[0.0,1.44],[2.14,10.85],[11.55,19.07],[19.77,25.21],[25.91,29.06],[29.76,32.4],[33.1,34.8],[35.51,39.42],[40.12,41.7],[42.4,48.67],[49.37,53.28],[53.98,58.08],[58.78,63.34],[64.05,71.97],[72.67,81.91],[82.61,94.56],[95.26,101.57],[102.27,105.3],[106.0,107.72],[108.42,111.52],[112.22,114.91],[115.61,117.58]]}},"2":{"ava":{"f":"audio/ava/d02.mp3","sec":101.8,"t":[[0.0,6.46],[7.16,11.19],[11.89,19.59],[20.29,23.01],[23.71,26.76],[27.46,40.06],[40.76,46.85],[47.55,50.19],[50.89,58.74],[59.44,66.28],[66.98,75.02],[75.72,80.93],[81.63,85.28],[85.98,88.91],[89.61,92.64],[93.33,97.13],[97.83,101.12]]},"andrew":{"f":"audio/andrew/d02.mp3","sec":102.1,"t":[[0.0,6.29],[6.99,11.12],[11.82,19.88],[20.58,23.2],[23.9,26.95],[27.65,40.68],[41.38,47.26],[47.96,50.75],[51.45,58.79],[59.49,66.19],[66.89,75.67],[76.37,80.93],[81.63,85.35],[86.05,88.86],[89.56,92.32],[93.02,96.84],[97.54,101.38]]}},"3":{"ava":{"f":"audio/ava/d03.mp3","sec":101.7,"t":[[0.0,3.31],[4.01,7.92],[8.62,12.11],[12.81,18.47],[19.17,23.25],[23.95,28.8],[29.5,39.53],[40.23,42.27],[42.97,48.35],[49.05,53.47],[54.17,60.74],[61.44,63.36],[64.06,74.77],[75.47,77.58],[78.28,84.36],[85.06,88.3],[89.0,90.96],[91.66,93.49],[94.19,96.3],[97.0,101.01]]},"andrew":{"f":"audio/andrew/d03.mp3","sec":101.3,"t":[[0.0,3.19],[3.89,8.02],[8.72,12.15],[12.85,18.4],[19.1,22.92],[23.62,28.92],[29.62,39.94],[40.64,42.66],[43.36,49.36],[50.06,54.81],[55.51,62.04],[62.74,64.66],[65.36,75.94],[76.64,78.78],[79.48,85.39],[86.09,89.04],[89.74,91.42],[92.12,93.73],[94.43,96.78],[97.48,100.58]]}},"4":{"ava":{"f":"audio/ava/d04.mp3","sec":98.1,"t":[[0.0,3.02],[3.73,9.24],[9.95,13.45],[14.15,20.1],[20.8,24.74],[25.44,29.76],[30.46,36.84],[37.55,46.57],[47.27,56.77],[57.47,64.53],[65.23,74.52],[75.22,80.02],[80.72,83.41],[84.11,87.49],[88.19,90.04],[90.74,93.55],[94.25,97.37]]},"andrew":{"f":"audio/andrew/d04.mp3","sec":99.4,"t":[[0.0,2.98],[3.68,9.08],[9.78,13.43],[14.13,20.51],[21.21,25.46],[26.16,29.86],[30.56,37.64],[38.34,47.36],[48.06,57.57],[58.27,66.28],[66.98,77.69],[78.39,82.2],[82.9,85.45],[86.15,89.37],[90.07,91.87],[92.57,94.78],[95.47,98.72]]}},"5":{"ava":{"f":"audio/ava/d05.mp3","sec":110.7,"t":[[0.0,2.42],[3.12,7.71],[8.41,14.19],[14.89,24.16],[24.86,27.43],[28.13,33.26],[33.96,37.33],[38.02,41.03],[41.73,44.77],[45.47,50.01],[50.71,53.4],[54.1,63.48],[64.18,71.05],[71.75,83.75],[84.45,90.79],[91.49,94.06],[94.75,98.55],[99.25,102.73],[103.43,106.0],[106.7,110.03]]},"andrew":{"f":"audio/andrew/d05.mp3","sec":111.1,"t":[[0.0,2.21],[2.91,7.8],[8.51,14.7],[15.4,24.69],[25.39,27.74],[28.44,33.65],[34.35,37.92],[38.62,41.6],[42.3,45.18],[45.88,50.56],[51.26,53.9],[54.6,64.49],[65.19,71.89],[72.59,84.61],[85.31,91.6],[92.3,94.8],[95.5,99.27],[99.97,102.99],[103.69,106.0],[106.7,110.42]]}},"6":{"ava":{"f":"audio/ava/d06.mp3","sec":60.3,"t":[[0.0,3.67],[4.37,7.3],[8.0,11.27],[11.97,16.26],[16.96,20.88],[21.58,28.42],[29.12,36.7],[37.4,44.91],[45.61,49.14],[49.84,53.52],[54.22,56.59],[57.29,59.62]]},"andrew":{"f":"audio/andrew/d06.mp3","sec":58.4,"t":[[0.0,3.29],[3.99,7.21],[7.91,10.31],[11.01,14.75],[15.45,19.72],[20.42,27.74],[28.44,36.05],[36.75,43.81],[44.51,47.97],[48.67,52.12],[52.82,54.82],[55.52,57.65]]}},"7":{"ava":{"f":"audio/ava/d07.mp3","sec":118.2,"t":[[0.0,1.44],[2.14,11.14],[11.84,18.78],[19.48,24.69],[25.39,28.41],[29.11,31.56],[32.26,34.2],[34.91,38.79],[39.49,41.32],[42.02,48.14],[48.84,52.66],[53.36,56.96],[57.66,62.67],[63.37,71.37],[72.07,81.38],[82.08,92.95],[93.65,98.88],[99.58,101.75],[102.44,104.03],[104.73,108.98],[109.68,113.76],[114.46,117.51]]},"andrew":{"f":"audio/andrew/d07.mp3","sec":119.9,"t":[[0.0,1.44],[2.14,10.85],[11.55,19.07],[19.77,25.21],[25.91,29.06],[29.76,32.4],[33.1,34.8],[35.51,39.42],[40.12,41.7],[42.4,49.1],[49.8,53.71],[54.41,58.52],[59.22,63.78],[64.48,72.4],[73.1,82.48],[83.18,95.3],[96.0,102.0],[102.7,104.65],[105.35,106.72],[107.42,111.14],[111.84,115.56],[116.26,119.21]]}},"8":{"ava":{"f":"audio/ava/d08.mp3","sec":140.7,"t":[[0.0,6.62],[7.33,15.27],[15.97,19.31],[20.01,28.0],[28.7,38.49],[39.19,55.27],[55.97,60.82],[61.52,71.77],[72.47,79.0],[79.7,90.72],[91.42,97.1],[97.8,103.64],[104.34,112.14],[112.84,121.12],[121.82,124.84],[125.54,128.06],[128.76,132.89],[133.59,136.57],[137.27,140.0]]},"andrew":{"f":"audio/andrew/d08.mp3","sec":144.1,"t":[[0.0,7.27],[7.97,15.68],[16.38,19.26],[19.96,28.74],[29.44,40.24],[40.94,56.28],[56.98,61.95],[62.65,73.59],[74.29,80.41],[81.11,93.38],[94.08,100.37],[101.07,107.28],[107.98,115.95],[116.65,125.01],[125.71,128.71],[129.41,131.5],[132.19,136.61],[137.31,140.29],[140.99,143.44]]}},"9":{"ava":{"f":"audio/ava/d09.mp3","sec":118.4,"t":[[0.0,5.28],[5.98,11.53],[12.22,20.89],[21.59,28.19],[28.89,41.56],[42.26,50.28],[50.98,57.37],[58.06,66.25],[66.95,72.06],[72.76,82.84],[83.54,91.44],[92.14,98.64],[99.34,102.32],[103.02,105.54],[106.24,109.22],[109.92,113.5],[114.19,117.65]]},"andrew":{"f":"audio/andrew/d09.mp3","sec":125.4,"t":[[0.0,5.3],[6.0,12.61],[13.3,23.07],[23.77,31.21],[31.91,45.12],[45.82,54.62],[55.32,62.14],[62.84,71.1],[71.8,77.63],[78.33,89.16],[89.86,98.64],[99.34,105.48],[106.18,109.19],[109.89,112.29],[112.99,116.16],[116.86,120.29],[120.99,124.66]]}},"10":{"ava":{"f":"audio/ava/d10.mp3","sec":130.9,"t":[[0.0,8.71],[9.41,13.69],[14.38,22.86],[23.56,32.37],[33.07,36.74],[37.44,40.78],[41.48,47.31],[48.01,55.4],[56.1,64.33],[65.03,77.95],[78.65,82.25],[82.95,90.29],[90.99,95.31],[96.01,105.64],[106.34,113.18],[113.88,116.5],[117.19,120.39],[121.09,123.47],[124.17,126.33],[127.03,130.24]]},"andrew":{"f":"audio/andrew/d10.mp3","sec":136.6,"t":[[0.0,9.53],[10.23,14.98],[15.68,23.46],[24.16,33.71],[34.41,38.04],[38.74,42.07],[42.77,49.04],[49.74,57.85],[58.55,68.32],[69.02,82.39],[83.09,86.88],[87.58,95.55],[96.25,100.91],[101.61,111.4],[112.1,119.23],[119.93,122.16],[122.86,125.98],[126.68,128.96],[129.66,131.92],[132.62,135.93]]}},"11":{"ava":{"f":"audio/ava/d11.mp3","sec":102.2,"t":[[0.0,6.67],[7.37,13.73],[14.43,22.71],[23.41,34.43],[35.13,48.16],[48.86,63.17],[63.87,77.57],[78.27,84.68],[85.38,87.47],[88.17,90.02],[90.72,94.3],[95.0,98.16],[98.86,101.48]]},"andrew":{"f":"audio/andrew/d11.mp3","sec":104.3,"t":[[0.0,6.87],[7.57,14.88],[15.59,24.87],[25.57,36.16],[36.86,50.95],[51.65,66.29],[66.99,81.12],[81.83,87.27],[87.97,90.28],[90.98,92.78],[93.48,96.65],[97.35,100.59],[101.29,103.59]]}},"12":{"ava":{"f":"audio/ava/d12.mp3","sec":102.2,"t":[[0.0,8.19],[8.88,17.29],[17.98,28.83],[29.53,43.55],[44.25,52.89],[53.59,60.41],[61.11,67.52],[68.22,77.03],[77.73,84.06],[84.76,87.88],[88.58,91.37],[92.07,95.4],[96.1,98.98],[99.69,101.49]]},"andrew":{"f":"audio/andrew/d12.mp3","sec":102.2,"t":[[0.0,8.76],[9.46,17.77],[18.46,30.03],[30.73,44.08],[44.78,53.47],[54.17,61.82],[62.52,68.89],[69.58,78.03],[78.73,85.21],[85.91,89.18],[89.88,92.09],[92.79,96.08],[96.78,99.15],[99.85,101.46]]}},"13":{"ava":{"f":"audio/ava/d13.mp3","sec":113.9,"t":[[0.0,7.42],[8.12,17.41],[18.11,30.99],[31.69,41.58],[42.28,52.56],[53.26,59.59],[60.29,68.07],[68.77,76.91],[77.61,88.55],[89.25,95.59],[96.29,99.38],[100.08,102.68],[103.38,106.57],[107.27,109.72],[110.42,113.2]]},"andrew":{"f":"audio/andrew/d13.mp3","sec":121.1,"t":[[0.0,7.85],[8.55,18.39],[19.09,33.18],[33.88,43.89],[44.59,55.53],[56.23,62.98],[63.68,72.51],[73.21,82.71],[83.41,95.63],[96.33,102.52],[103.22,106.15],[106.85,109.71],[110.41,113.41],[114.11,116.87],[117.57,120.38]]}},"14":{"ava":{"f":"audio/ava/d14.mp3","sec":134.3,"t":[[0.0,6.62],[7.33,15.27],[15.97,19.31],[20.01,28.0],[28.7,38.28],[38.98,55.15],[55.85,60.7],[61.4,71.65],[72.35,78.88],[79.58,90.59],[91.3,96.98],[97.68,103.52],[104.22,112.28],[112.98,119.17],[119.87,121.6],[122.3,124.13],[124.83,126.96],[127.66,130.02],[130.72,133.6]]},"andrew":{"f":"audio/andrew/d14.mp3","sec":138.6,"t":[[0.0,7.22],[7.92,15.63],[16.33,19.21],[19.91,28.7],[29.39,40.22],[40.92,56.83],[57.53,62.5],[63.2,74.24],[74.94,81.06],[81.76,94.03],[94.73,101.18],[101.88,108.1],[108.8,116.91],[117.61,124.09],[124.79,126.4],[127.1,128.64],[129.34,131.52],[132.22,134.79],[135.49,137.92]]}},"15":{"ava":{"f":"audio/ava/d15.mp3","sec":106.8,"t":[[0.0,3.98],[4.68,10.85],[11.55,16.64],[17.34,22.91],[23.61,28.96],[29.66,33.53],[34.23,37.06],[37.76,41.58],[42.28,49.05],[49.75,51.74],[52.44,58.78],[59.48,67.01],[67.71,78.06],[78.76,85.62],[86.32,89.92],[90.62,93.65],[94.35,98.69],[99.39,102.99],[103.69,106.14]]},"andrew":{"f":"audio/andrew/d15.mp3","sec":109.7,"t":[[0.0,3.62],[4.33,10.56],[11.27,16.83],[17.53,23.61],[24.31,29.37],[30.07,34.06],[34.76,37.2],[37.91,42.03],[42.73,49.43],[50.13,52.0],[52.7,59.57],[60.27,67.97],[68.67,79.88],[80.58,87.78],[88.48,92.37],[93.07,95.76],[96.46,100.95],[101.65,105.56],[106.26,109.02]]}},"16":{"ava":{"f":"audio/ava/d16.mp3","sec":116.5,"t":[[0.0,8.04],[8.74,16.13],[16.83,23.77],[24.47,32.66],[33.35,38.95],[39.65,59.26],[59.96,68.62],[69.32,76.86],[77.56,81.73],[82.43,90.64],[91.34,98.02],[98.72,101.36],[102.06,104.98],[105.69,108.71],[109.41,112.05],[112.75,115.8]]},"andrew":{"f":"audio/andrew/d16.mp3","sec":120.6,"t":[[0.0,8.47],[9.17,17.02],[17.72,24.68],[25.38,34.43],[35.13,41.32],[42.02,62.47],[63.17,72.44],[73.14,81.18],[81.88,86.29],[86.99,95.32],[96.02,102.94],[103.64,106.25],[106.95,109.76],[110.46,113.15],[113.85,116.37],[117.07,119.88]]}},"17":{"ava":{"f":"audio/ava/d17.mp3","sec":112.3,"t":[[0.0,5.04],[5.74,8.07],[8.77,19.35],[20.05,25.48],[26.18,31.72],[32.42,55.06],[55.76,62.02],[62.72,71.51],[72.21,77.17],[77.87,84.98],[85.68,93.31],[94.01,97.11],[97.81,100.71],[101.41,104.05],[104.75,107.92],[108.62,111.62]]},"andrew":{"f":"audio/andrew/d17.mp3","sec":116.3,"t":[[0.0,4.9],[5.6,7.68],[8.38,19.38],[20.08,25.57],[26.27,31.77],[32.47,57.58],[58.28,65.12],[65.82,74.79],[75.49,81.06],[81.76,89.11],[89.81,97.27],[97.97,101.14],[101.84,104.7],[105.4,108.21],[108.91,112.05],[112.75,115.58]]}},"18":{"ava":{"f":"audio/ava/d18.mp3","sec":133.1,"t":[[0.0,7.03],[7.73,28.45],[29.14,33.87],[34.57,40.89],[41.59,48.88],[49.58,64.56],[65.26,72.65],[73.35,80.55],[81.25,93.35],[94.05,106.22],[106.92,113.18],[113.88,115.88],[116.58,119.72],[120.42,123.64],[124.34,128.32],[129.02,132.43]]},"andrew":{"f":"audio/andrew/d18.mp3","sec":140.6,"t":[[0.0,8.14],[8.84,30.99],[31.69,37.11],[37.81,45.16],[45.86,54.4],[55.1,70.87],[71.57,79.64],[80.34,87.99],[88.69,101.82],[102.52,115.75],[116.45,121.68],[122.38,124.23],[124.93,127.93],[128.63,131.34],[132.04,135.67],[136.37,139.9]]}},"19":{"ava":{"f":"audio/ava/d19.mp3","sec":106.5,"t":[[0.0,2.69],[3.39,12.22],[12.92,18.27],[18.97,24.33],[25.03,28.75],[29.45,36.62],[37.32,39.84],[40.55,44.15],[44.85,50.53],[51.23,56.37],[57.07,63.12],[63.82,69.08],[69.78,77.7],[78.4,85.12],[85.82,92.44],[93.14,94.63],[95.33,97.66],[98.36,100.06],[100.77,102.81],[103.5,105.79]]},"andrew":{"f":"audio/andrew/d19.mp3","sec":106.3,"t":[[0.0,2.86],[3.56,12.27],[12.97,18.06],[18.76,24.18],[24.88,28.89],[29.59,36.5],[37.2,39.89],[40.59,44.24],[44.94,50.82],[51.52,57.16],[57.86,63.74],[64.44,69.63],[70.33,78.18],[78.88,85.89],[86.59,93.16],[93.86,95.28],[95.98,98.02],[98.72,100.38],[101.08,102.81],[103.5,105.64]]}},"20":{"ava":{"f":"audio/ava/d20.mp3","sec":103.7,"t":[[0.0,5.88],[6.58,13.06],[13.76,20.15],[20.85,22.91],[23.61,25.53],[26.23,31.82],[32.52,43.66],[44.36,49.93],[50.63,58.24],[58.94,65.68],[66.38,70.44],[71.14,80.28],[80.98,85.76],[86.46,89.65],[90.35,93.52],[94.22,96.67],[97.37,99.17],[99.87,102.97]]},"andrew":{"f":"audio/andrew/d20.mp3","sec":104.4,"t":[[0.0,6.43],[7.13,13.88],[14.58,20.51],[21.21,23.2],[23.9,25.56],[26.26,32.18],[32.88,43.88],[44.58,50.31],[51.01,57.76],[58.46,65.66],[66.36,70.63],[71.33,80.91],[81.61,87.15],[87.85,90.88],[91.58,94.36],[95.06,97.68],[98.38,100.01],[100.71,103.74]]}},"21":{"ava":{"f":"audio/ava/d21.mp3","sec":98.6,"t":[[0.0,3.87],[4.57,10.73],[11.43,16.52],[17.22,22.79],[23.49,28.51],[29.21,33.07],[33.77,36.6],[37.3,41.15],[41.85,48.37],[49.07,51.07],[51.77,58.1],[58.8,66.34],[67.04,77.58],[78.28,84.83],[85.53,87.47],[88.17,89.88],[90.58,92.45],[93.15,95.72],[96.42,97.91]]},"andrew":{"f":"audio/andrew/d21.mp3","sec":99.5,"t":[[0.0,3.62],[4.33,10.56],[11.27,16.83],[17.53,23.61],[24.31,29.3],[30.0,33.98],[34.68,37.13],[37.83,41.96],[42.66,49.36],[50.06,51.93],[52.63,59.5],[60.2,67.9],[68.6,79.74],[80.44,86.97],[87.67,89.52],[90.22,91.87],[92.57,94.32],[95.02,96.85],[97.55,98.82]]}},"22":{"ava":{"f":"audio/ava/d22.mp3","sec":108.6,"t":[[0.0,9.41],[10.11,19.8],[20.5,24.99],[25.69,32.2],[32.9,44.13],[44.83,51.22],[51.92,61.71],[62.41,75.03],[75.73,86.46],[87.16,93.55],[94.25,96.24],[96.94,99.6],[100.3,102.25],[102.95,105.3],[106.0,107.88]]},"andrew":{"f":"audio/andrew/d22.mp3","sec":112.6,"t":[[0.0,10.49],[11.19,21.05],[21.75,26.1],[26.8,33.9],[34.6,45.43],[46.13,53.16],[53.86,63.94],[64.64,78.06],[78.76,91.0],[91.7,97.41],[98.11,99.91],[100.61,103.73],[104.43,106.21],[106.91,109.45],[110.15,111.91]]}},"23":{"ava":{"f":"audio/ava/d23.mp3","sec":109.0,"t":[[0.0,4.42],[5.12,15.46],[16.16,23.99],[24.69,38.17],[38.88,45.07],[45.77,53.28],[53.98,65.48],[66.18,69.01],[69.71,74.46],[75.16,81.43],[82.13,88.08],[88.78,95.36],[96.06,96.99],[97.69,98.99],[99.69,102.81],[103.51,104.81],[105.51,108.29]]},"andrew":{"f":"audio/andrew/d23.mp3","sec":111.0,"t":[[0.0,4.8],[5.5,16.11],[16.81,24.44],[25.14,39.23],[39.93,46.58],[47.28,55.3],[56.0,67.52],[68.22,71.07],[71.77,76.26],[76.96,83.71],[84.41,90.89],[91.59,97.78],[98.48,99.47],[100.17,101.34],[102.04,104.95],[105.65,106.82],[107.52,110.28]]}},"24":{"ava":{"f":"audio/ava/d24.mp3","sec":138.5,"t":[[0.0,11.57],[12.27,33.2],[33.9,45.63],[46.33,49.79],[50.49,54.02],[54.72,69.05],[69.75,82.04],[82.74,92.24],[92.94,99.52],[100.22,114.95],[115.66,123.05],[123.75,125.36],[126.06,128.24],[128.94,130.65],[131.35,133.27],[133.97,137.83]]},"andrew":{"f":"audio/andrew/d24.mp3","sec":143.4,"t":[[0.0,11.79],[12.48,34.52],[35.22,47.27],[47.97,51.35],[52.05,56.37],[57.07,71.42],[72.12,85.18],[85.88,95.31],[96.01,103.77],[104.47,120.36],[121.06,128.64],[129.34,130.78],[131.48,134.26],[134.97,136.29],[136.99,138.47],[139.18,142.68]]}},"25":{"ava":{"f":"audio/ava/d25.mp3","sec":157.1,"t":[[0.0,11.95],[12.65,24.36],[25.07,37.33],[38.03,55.43],[56.13,66.36],[67.06,75.62],[76.32,90.8],[91.5,106.16],[106.86,123.13],[123.83,135.35],[136.06,142.92],[143.62,145.32],[146.02,148.31],[149.0,150.9],[151.6,153.69],[154.39,156.41]]},"andrew":{"f":"audio/andrew/d25.mp3","sec":158.9,"t":[[0.0,11.88],[12.58,24.75],[25.45,37.83],[38.53,55.29],[55.99,66.45],[67.15,76.08],[76.78,93.2],[93.9,109.19],[109.89,126.35],[127.05,138.88],[139.58,145.82],[146.52,148.18],[148.88,150.9],[151.6,153.37],[154.07,155.97],[156.67,158.21]]}},"26":{"ava":{"f":"audio/ava/d26.mp3","sec":161.0,"t":[[0.0,15.89],[16.59,25.2],[25.91,36.18],[36.88,44.92],[45.62,59.2],[59.9,71.38],[72.08,80.31],[81.01,96.42],[97.12,112.05],[112.75,119.47],[120.17,136.1],[136.8,143.86],[144.56,146.46],[147.16,149.46],[150.16,153.62],[154.32,156.55],[157.25,160.28]]},"andrew":{"f":"audio/andrew/d26.mp3","sec":165.1,"t":[[0.0,16.7],[17.41,25.97],[26.67,37.62],[38.32,47.34],[48.04,62.49],[63.19,75.05],[75.75,84.51],[85.21,100.62],[101.32,116.75],[117.45,125.06],[125.76,141.29],[141.99,149.0],[149.7,151.31],[152.0,154.26],[154.96,157.94],[158.64,160.82],[161.52,164.38]]}},"27":{"ava":{"f":"audio/ava/d27.mp3","sec":131.3,"t":[[0.0,5.3],[6.0,15.8],[16.5,27.39],[28.09,38.94],[39.64,58.41],[59.11,70.37],[71.07,77.93],[78.63,88.38],[89.08,108.57],[109.27,115.27],[115.97,118.61],[119.31,121.52],[122.22,124.67],[125.36,128.08],[128.78,130.58]]},"andrew":{"f":"audio/andrew/d27.mp3","sec":134.4,"t":[[0.0,5.64],[6.34,16.16],[16.86,28.59],[29.29,41.34],[42.04,60.81],[61.51,73.63],[74.33,82.06],[82.76,93.39],[94.09,113.94],[114.64,119.9],[120.6,122.78],[123.48,125.28],[125.98,128.62],[129.32,131.46],[132.16,133.65]]}},"28":{"ava":{"f":"audio/ava/d28.mp3","sec":146.4,"t":[[0.0,9.98],[10.69,21.15],[21.85,27.2],[27.9,43.24],[43.94,51.16],[51.86,60.96],[61.66,68.98],[69.68,75.78],[76.48,80.89],[81.59,89.18],[89.88,102.1],[102.8,109.95],[110.65,122.96],[123.66,132.06],[132.76,134.06],[134.76,137.47],[138.17,139.47],[140.17,143.22],[143.92,145.72]]},"andrew":{"f":"audio/andrew/d28.mp3","sec":152.4,"t":[[0.0,10.78],[11.48,22.61],[23.31,28.76],[29.46,45.49],[46.2,54.55],[55.25,64.46],[65.16,72.99],[73.69,79.98],[80.68,85.12],[85.82,93.76],[94.46,106.97],[107.67,115.73],[116.43,129.87],[130.57,139.19],[139.89,141.07],[141.77,144.19],[144.89,146.07],[146.77,149.48],[150.18,151.74]]}},"29":{"ava":{"f":"audio/ava/d29.mp3","sec":108.1,"t":[[0.0,5.57],[6.27,15.92],[16.62,19.19],[19.89,22.43],[23.13,30.69],[31.39,36.12],[36.82,51.87],[52.57,67.59],[68.29,73.65],[74.35,83.01],[83.71,89.21],[89.91,91.97],[92.67,94.98],[95.68,99.45],[100.15,104.03],[104.73,107.4]]},"andrew":{"f":"audio/andrew/d29.mp3","sec":113.7,"t":[[0.0,7.01],[7.71,17.43],[18.13,21.06],[21.76,24.28],[24.98,34.39],[35.09,39.91],[40.61,55.61],[56.31,72.3],[73.0,78.06],[78.76,88.15],[88.85,94.49],[95.19,97.33],[98.03,100.81],[101.51,105.01],[105.71,110.01],[110.71,113.02]]}},"30":{"ava":{"f":"audio/ava/d30.mp3","sec":123.5,"t":[[0.0,22.82],[23.52,29.84],[30.54,34.38],[35.08,39.18],[39.88,47.97],[48.67,63.38],[64.08,70.78],[71.48,80.63],[81.33,84.97],[85.67,99.02],[99.72,105.77],[106.47,108.58],[109.28,111.73],[112.43,115.43],[116.13,118.58],[119.28,122.78]]},"andrew":{"f":"audio/andrew/d30.mp3","sec":125.7,"t":[[0.0,23.45],[24.15,30.99],[31.69,35.7],[36.4,41.03],[41.73,50.18],[50.88,65.02],[65.72,72.34],[73.04,82.19],[82.89,86.51],[87.21,101.56],[102.26,108.43],[109.13,110.76],[111.46,113.89],[114.59,118.09],[118.79,120.79],[121.49,125.04]]}}};
+const K30BASE="https://88nianxiaobai.github.io/kai30/";
+
+/* 内容层：AI 安全 12 个月计划 + 学业课程/考试/截止日 */
+
+const AI_SEC = {
+  weeklyGoal: 2,          /* 每周目标：2 次 ×1h */
+  sessionMin: 30,         /* 单次计时 ≥30 分钟记 1 次 */
+  months: [
+    { m: "2026-10", t: "摸底 + 建接触点",
+      goal: "产出：本部门 AIGC/Agent 应用风险清单 v1（一页纸）",
+      tasks: [
+        { id: "a10-1", txt: "约智能体安全团队的人聊一次：问清他们最痛的 3 个问题 / 转岗看什么 / 技术栈" },
+        { id: "a10-2", txt: "通读 OWASP Top 10 for LLM Applications" },
+        { id: "a10-3", txt: "产出一页纸《本部门 AIGC/Agent 应用风险清单 v1》" }
+      ] },
+    { m: "2026-11", t: "Agent 链路动手",
+      goal: "产出：Agent 攻击面地图 + 2 个亲手复现的案例",
+      tasks: [
+        { id: "a11-1", txt: "本地 Ollama 起一个带工具调用的 Agent + 一个 RAG（本机有 GPU）" },
+        { id: "a11-2", txt: "复现 ①提示注入→越权工具调用 ②RAG 数据外泄" },
+        { id: "a11-3", txt: "画出 Agent 攻击面地图（输入/模型/工具/MCP/沙箱/日志）" }
+      ] },
+    { m: "2026-12", t: "降载维持月（参赛决赛 + 六级 + 三门考试）",
+      goal: "只读不考：每周 2h，维持不断档",
+      tasks: [
+        { id: "a12-1", txt: "读 ISO/IEC 42001 条款（每周 1h）" },
+        { id: "a12-2", txt: "读 TC260《生成式人工智能服务安全基本要求》（每周 1h）" }
+      ] },
+    { m: "2027-01", t: "拿第一个硬标签：ISO/IEC 42001",
+      goal: "产出：内审员/主任审核员证书",
+      tasks: [
+        { id: "a01-1", txt: "报 ISO/IEC 42001 内审员或主任审核员培训" },
+        { id: "a01-2", txt: "完成培训 + 考试，拿证" }
+      ] },
+    { m: "2027-02", t: "差距评估（把标准套到真实系统上）",
+      goal: "产出：本项目 AIMS 差距清单",
+      tasks: [
+        { id: "a02-1", txt: "挑一个部门现有 AIGC/Agent 应用，按 42001 条款逐条做差距评估" },
+        { id: "a02-2", txt: "输出《XX 应用 AIMS 差距清单》并给出 3 条可执行整改建议" }
+      ] },
+    { m: "2027-03", t: "把治理做成可控件（最关键的一件产出）",
+      goal: "产出：可 demo 的护栏原型 + 评测报告",
+      tasks: [
+        { id: "a03-1", txt: "提示注入检测规则集" },
+        { id: "a03-2", txt: "Agent 工具权限白名单" },
+        { id: "a03-3", txt: "100 条攻击用例自动评测并出报告" }
+      ] },
+    { m: "2027-04", t: "对外练手",
+      goal: "产出：众测/红队成绩",
+      tasks: [
+        { id: "a04-1", txt: "报名 CNCERT 大模型安全众测（含智能体应用赛道，往年 4 月报名）" },
+        { id: "a04-2", txt: "或参与公司内部红队" }
+      ] },
+    { m: "2027-05", t: "内部可见度",
+      goal: "产出：部门技术分享 + 内部导师",
+      tasks: [
+        { id: "a05-1", txt: "在部门做一次分享：《Agent 安全的攻击面与可控件》" },
+        { id: "a05-2", txt: "找目标团队 leader 定 1v1，明确表达转岗意愿" }
+      ] },
+    { m: "2027-06", t: "补第二张牌",
+      goal: "产出：第二张标签",
+      tasks: [
+        { id: "a06-1", txt: "视情况考 IAPP AIGP（AI 治理专业认证）" },
+        { id: "a06-2", txt: "或深挖工程：MCP / 沙箱 / 审计日志体系" }
+      ] },
+    { m: "2027-07", t: "走内部活水流程",
+      goal: "产出：转岗面试",
+      tasks: [
+        { id: "a07-1", txt: "先跟现主管沟通，争取支持（不要突然袭击）" },
+        { id: "a07-2", txt: "准备内部面试：技术 + 治理 + 案例" }
+      ] },
+    { m: "2027-08", t: "过渡",
+      goal: "产出：落地",
+      tasks: [
+        { id: "a08-1", txt: "工作交接" },
+        { id: "a08-2", txt: "抢下目标团队第一件能打的活" }
+      ] },
+    { m: "2027-09", t: "复盘",
+      goal: "定下一年：深工程 or 治理+合规专家",
+      tasks: [{ id: "a09-1", txt: "复盘 12 个月，定下一年方向" }] }
+  ]
+};
+
+const ACAD = {
+  term: "2026 秋 · Term 1",
+  courses: [
+    { c: "ME",    n: "管理经济学",           d: ["2026-10-17", "2026-10-18", "2026-10-24"], ex: "2026-10-31" },
+    { c: "OBL",   n: "组织行为与领导力",      d: ["2026-10-25", "2026-10-31", "2026-11-01"], ex: "2026-11-14" },
+    { c: "QTM",   n: "数据、模型与决策",      d: ["2026-11-14", "2026-11-15", "2026-11-21"], ex: "2026-11-28" },
+    { c: "HRM",   n: "人力资源管理",          d: ["2026-11-22", "2026-11-28", "2026-11-29"], ex: "2026-12-19" },
+    { c: "BESD",  n: "商业伦理与可持续发展",  d: ["2026-12-12", "2026-12-13", "2026-12-19"], ex: "2026-12-26" },
+    { c: "ADM",   n: "会计与决策",            d: ["2026-12-20", "2026-12-26", "2026-12-27"], ex: "2027-01-16" },
+    { c: "DITBA", n: "数智技术与商业应用",    d: ["2027-01-16", "2027-01-17"],             ex: "" }
+  ],
+  events: [
+    { d: "2026-09-22", time: "19:00", t: "参赛报名硬截止（逾期不补）", k: "hard" },
+    { d: "2026-09-28", time: "17:00", t: "六级（CET6）报名截止", k: "hard" },
+    { d: "2026-09-30", time: "23:59", t: "商务英语期末报告截止（800–1000 字，占 60%）", k: "hard" },
+    { d: "2026-10-04", time: "23:59", t: "政治课实践报告上传截止（逾期最高 75 分）", k: "hard" },
+    { d: "2026-10-13", time: "", t: "口语 30 天计划收官（Day30）", k: "plan" },
+    { d: "2026-11-14", time: "", t: "参赛复赛答辩（11/14–15）", k: "hard" },
+    { d: "2026-12-05", time: "", t: "参赛总决赛 · 北京（12/5–6）", k: "hard" },
+    { d: "2026-12-12", time: "15:00", t: "六级笔试 15:00–17:25 ⚠️ 撞 BESD 全天课", k: "hard" },
+    { d: "2027-01-17", time: "", t: "本学期最后一节课", k: "plan" }
+  ],
+  /* 无课周末（可选休息） */
+  freebies: ["2026-09-26", "2026-09-27", "2026-10-03", "2026-10-04", "2026-10-10", "2026-10-11",
+             "2026-11-07", "2026-11-08", "2026-12-05", "2026-12-06", "2027-01-02", "2027-01-03",
+             "2027-01-09", "2027-01-10"]
+};
+
+/* ================= 今日 · 我的计划中枢 ================= */
+const $ = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => Array.prototype.slice.call((r || document).querySelectorAll(s));
+const STKEY = 'hub_v1';
+const READ_T = 25 * 60, TALK_T = 30 * 60, TALK_MIN = 15 * 60, REC_MIN = 30, AS_SESSION = 30 * 60;
+
+/* ---------- 日期工具 ---------- */
+function ymd(d) { d = d || new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function today() { return ymd(); }
+function dn(s) { const p = s.split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); }
+function fmtMD(s) { const a = dn(s); return (a.getMonth() + 1) + '月' + a.getDate() + '日'; }
+function wk(s) { return '周' + '日一二三四五六'[dn(s).getDay()]; }
+function mmss(n) { n = Math.max(0, Math.floor(n)); return String(Math.floor(n / 60)).padStart(2, '0') + ':' + String(n % 60).padStart(2, '0'); }
+function diffDays(a, b) { return Math.round((dn(b) - dn(a)) / 86400000); }
+function weekStart(s) { const d = dn(s); const w = (d.getDay() + 6) % 7; d.setDate(d.getDate() - w); return ymd(d); }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+
+/* ---------- 状态 ---------- */
+function blank() {
+  return {
+    tab: 'today', voice: 'ava', rate: 1, strict: false, remind: '21:00',
+    ck: {}, asT: {}, asS: [], acad: {},
+    day: { date: today(), read: 0, talk: 0, as: 0, aud: 0, rec: 0, run: null, note: '', sRec: false }
+  };
+}
+let S = load();
+function load() { try { const o = JSON.parse(localStorage.getItem(STKEY) || 'null'); if (o && o.day) return Object.assign(blank(), o); } catch (e) { } return blank(); }
+function save() { try { localStorage.setItem(STKEY, JSON.stringify(S)); } catch (e) { } }
+function rollover() {
+  const t = today();
+  if (S.day.date !== t) { S.day = { date: t, read: 0, talk: 0, as: 0, aud: 0, rec: 0, run: null, note: '', sRec: false }; save(); }
+}
+
+/* ---------- 口语数据 ---------- */
+function kd(n) { return K30[n - 1] || null; }
+function dayNoOf(ds) {
+  const a = dn(ds), k = (a.getMonth() + 1) + '/' + a.getDate();
+  for (let i = 0; i < K30.length; i++) if (K30[i].md === k) return i + 1;
+  return 0;
+}
+function sentLabels(n) {
+  const au = (K30AUDIO[n] || {})[S.voice] || (K30AUDIO[n] || {}).ava;
+  const t = (au && au.t) ? au.t : [];
+  const L = []; const N = t.length;
+  for (let i = 0; i < N; i++) {
+    if (i < N - 6) L.push('m');
+    else if (i === N - 6) L.push('ask');
+    else if (i < N - 3) L.push('trap');
+    else L.push('sk');
+  }
+  return L;
+}
+function sentText(n, lab, k) {
+  const d = kd(n); if (!d) return '';
+  if (lab === 'ask') return d.ask;
+  if (lab === 'trap') return (d.traps[k] || ['', ''])[1];
+  if (lab === 'sk') return (d.sk[k] || ['', ''])[0];
+  return '';
+}
+
+/* ---------- 日程数据 ---------- */
+function evMap() {
+  const M = {};
+  function push(d, o) { if (!d) return; (M[d] = M[d] || []).push(o); }
+  ACAD.courses.forEach(c => {
+    c.d.forEach(d => push(d, { t: c.c + ' ' + c.n + '（全天课）', k: 'class', time: '9:00–17:30' }));
+    if (c.ex) push(c.ex, { t: c.c + ' 考试', k: 'exam', time: '' });
+  });
+  ACAD.events.forEach(e => push(e.d, { t: e.t, k: e.k, time: e.time }));
+  return M;
+}
+const EV = evMap();
+function eventsOn(d) { return (EV[d] || []).slice(); }
+function upcoming(from, n) {
+  const out = [];
+  for (let i = 0; i < 400 && out.length < n; i++) {
+    const d = new Date(dn(from).getTime() + i * 86400000), k = ymd(d);
+    if (i > 0) eventsOn(k).forEach(e => { if (out.length < n) out.push(Object.assign({ d: k }, e)); });
+  }
+  return out;
+}
+
+/* ---------- AI 安全 ---------- */
+function curMonth() {
+  const cm = today().slice(0, 7);
+  let exact = null, next = null;
+  AI_SEC.months.forEach(m => { if (m.m === cm) exact = m; if (!next && m.m > cm) next = m; });
+  return { m: exact || next, future: !exact };
+}
+function asWeekDone() {
+  const ws = weekStart(today()), we = ymd(new Date(dn(ws).getTime() + 6 * 86400000));
+  return S.asS.filter(d => d >= ws && d <= we).length;
+}
+function asTodayOk() { return asWeekDone() >= AI_SEC.weeklyGoal; }
+function asDoneCount(m) { return m.tasks.filter(t => S.asT[t.id]).length; }
+
+/* ---------- 证据判定 ---------- */
+function reqs() {
+  const d = S.day, hard = [], soft = [];
+  hard.push({ k: 'read', sl: '跟读 25′', t: '跟读满 25 分钟', ok: d.read >= READ_T, v: mmss(d.read) + ' / 25:00' });
+  hard.push({ k: 'aud', sl: '音频 1 遍', t: '当日音频完整听 1 遍', ok: d.aud >= 1, v: d.aud + ' / 1 遍' });
+  hard.push({ k: 'rec', sl: '开口录音 30s', t: '开口录音 ≥30 秒' + (d.sRec ? '（自证：音频需满 2 遍）' : ''), ok: d.rec >= REC_MIN || (d.sRec && d.aud >= 2), v: d.sRec ? '自证 · 音频 ' + (d.aud || 0) + '/2 遍' : (d.rec || 0) + ' 秒' });
+  soft.push({ k: 'talk', sl: '对话 30′', t: '对话满 30 分钟', ok: d.talk >= TALK_T, v: mmss(d.talk) + ' / 30:00' });
+  const c = curMonth();
+  if (c.m) soft.push({ k: 'as', sl: 'AI 安全', t: 'AI 安全本周满 ' + AI_SEC.weeklyGoal + ' 次', ok: asTodayOk(), v: asWeekDone() + '/' + AI_SEC.weeklyGoal + ' 次' });
+  const todays = eventsOn(today()).filter(e => e.k === 'hard' || e.k === 'exam');
+  todays.forEach((e, i) => soft.push({ k: 'acad' + i, sl: '学业', t: '学业：' + e.t, ok: !!S.acad[today()], v: S.acad[today()] ? '已确认' : '未确认' }));
+  return { hard: hard, soft: soft };
+}
+function canCk() { const r = reqs(); if (S.ck[today()]) return false; if (!r.hard.every(x => x.ok)) return false; return S.strict ? r.soft.every(x => x.ok) : true; }
+function streak() {
+  let n = 0, d = new Date();
+  if (!S.ck[ymd(d)]) d.setDate(d.getDate() - 1);
+  while (S.ck[ymd(d)]) { n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
+
+/* ---------- toast ---------- */
+let tt = null;
+function toast(m) { const e = $('#toast'); e.textContent = m; e.classList.add('show'); clearTimeout(tt); tt = setTimeout(() => e.classList.remove('show'), 2000); }
+
+/* ---------- 音频 ---------- */
+const au = $('#au');
+let curD = 0, curSent = -1;
+function audioURL(n) { const a = K30AUDIO[n] || {}; const v = a[S.voice] ? S.voice : 'ava'; return K30BASE + (a[v] ? a[v].f : ''); }
+function loadAudio(n) { if (curD === n && au.src) return; curD = n; au.src = audioURL(n); au.playbackRate = S.rate; }
+function playAudio(n, from) {
+  loadAudio(n);
+  if (from != null) { try { au.currentTime = from; } catch (e) { } }
+  au.playbackRate = S.rate;
+  au.play().catch(e => toast('播放失败：' + e.name + (e.name === 'NotAllowedError' ? '（需先点一下页面）' : '')));
+}
+function seekSent(n, i) {
+  const a = K30AUDIO[n] || {}; const v = a[S.voice] ? S.voice : 'ava';
+  const t = a[v] && a[v].t ? a[v].t[i] : null;
+  if (!t) return;
+  loadAudio(n); try { au.currentTime = t[0]; } catch (e) { }
+  au.playbackRate = S.rate; au.play().catch(() => { });
+}
+au.addEventListener('ended', () => {
+  const n = dayNoOf(today());
+  if (curD && (n === 0 || curD === n)) { S.day.aud = Math.max(S.day.aud, 1); save(); toast('✅ 今日音频听完一遍'); renderAll(); }
+});
+au.addEventListener('timeupdate', () => {
+  const a = K30AUDIO[curD] || {}; const v = a[S.voice] ? S.voice : 'ava';
+  const t = a[v] && a[v].t ? a[v].t : [];
+  let idx = -1; const c = au.currentTime;
+  for (let i = 0; i < t.length; i++) if (c >= t[i][0] && c <= t[i][1] + 0.05) { idx = i; break; }
+  if (idx !== curSent) { curSent = idx; paintSent(); }
+});
+
+/* ---------- 录音 ---------- */
+let mr = null, stream = null, recT0 = 0;
+async function recToggle() {
+  if (mr && mr.state === 'recording') { mr.stop(); return; }
+  if (!window.MediaRecorder || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    toast('此浏览器不支持录音（微信内置常见）→ 用 Safari/Chrome 打开'); return;
+  }
+  try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+  catch (e) { toast('麦克风不可用：' + e.name); return; }
+  mr = new MediaRecorder(stream);
+  mr.ondataavailable = () => { };
+  mr.onstop = () => {
+    const sec = Math.round((Date.now() - recT0) / 1000);
+    if (stream) stream.getTracks().forEach(t => t.stop());
+    mr = null;
+    if (sec > (S.day.rec || 0)) S.day.rec = sec;
+    save(); toast('录音 ' + sec + ' 秒 · 仅本地校验，未上传'); renderAll();
+  };
+  recT0 = Date.now(); mr.start(); renderAll();
+}
+
+/* ---------- 计时 ---------- */
+setInterval(() => {
+  const r = S.day.run; if (!r) return;
+  if (r === 'talk' || document.visibilityState === 'visible') {
+    S.day[r] = (S.day[r] || 0) + 1;
+    if (r === 'as' && S.day.as >= AS_SESSION && S.asS.indexOf(today()) < 0) {
+      S.asS.push(today()); toast('✅ AI 安全本周 +1 次（满 30 分钟）'); save(); renderAll();
+    }
+    tickPaint();
+    if (S.day[r] % 15 === 0) save();
+  }
+}, 1000);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible' && (S.day.run === 'read' || S.day.run === 'as')) {
+    S.day.run = null; save(); renderAll(); toast('切到后台已暂停计时（对话除外）');
+  }
+});
+function toggleTimer(k) {
+  if (S.day.run === k) { S.day.run = null; save(); renderAll(); return; }
+  S.day.run = k; save(); renderAll();
+  toast(k === 'read' ? '跟读计时中 · 别切走' : k === 'talk' ? '对话计时中' : 'AI 安全计时中');
+}
+function tickPaint() {
+  ['read', 'talk', 'as'].forEach(k => { const e = document.getElementById('tm-' + k); if (e) e.textContent = mmss(S.day[k]); });
+  const e = document.getElementById('tm-rec');
+  if (e && mr && mr.state === 'recording') e.textContent = Math.round((Date.now() - recT0) / 1000) + ' 秒';
+}
+
+/* ---------- 打卡 ---------- */
+function doCk() {
+  if (S.ck[today()]) { toast('今天已经打过卡了'); return; }
+  if (!canCk()) {
+    const r = reqs(); const miss = r.hard.filter(x => !x.ok).map(x => x.t);
+    toast('还差：' + (miss.length ? miss.join('、') : '严格模式下未达标项')); return;
+  }
+  const r = reqs();
+  S.ck[today()] = { ts: Date.now(), full: r.soft.every(x => x.ok) ? 1 : 0, read: S.day.read, talk: S.day.talk, rec: S.day.rec };
+  save(); toast('✅ 打卡成功 · 连续 ' + streak() + ' 天'); renderAll();
+}
+
+/* ---------- 渲染：顶栏 ---------- */
+function renderHdr() {
+  const t = today();
+  $('#hDate').textContent = fmtMD(t);
+  $('#hWk').textContent = dn(t).getFullYear() + '年 · ' + wk(t);
+  const dno = dayNoOf(t);
+  const p = [];
+  if (dno) { p.push('口语 <b>Day ' + dno + '/30</b>'); p.push('剩 <b>' + (30 - dno) + '</b> 天'); }
+  else p.push('口语：不在 9/14–10/13 区间');
+  p.push('连续 <b>' + streak() + '</b> 天');
+  p.push(S.ck[t] ? '<b class="ok">今日已打卡</b>' : '<b class="warn">今日未打卡</b>');
+  $('#hSub').innerHTML = p.join(' · ');
+  let evs = eventsOn(t);
+  let html = evs.map(e => '<span class="ev ' + e.k + '">今天 · ' + esc(e.t) + (e.time ? ' · ' + e.time : '') + '</span>').join('');
+  if (!evs.length) {
+    html = upcoming(t, 3).map(e => '<span class="ev ' + e.k + '">' + diffDays(t, e.d) + ' 天后 · ' + esc(e.t) + '</span>').join('');
+  }
+  $('#hEv').innerHTML = html;
+}
+
+/* ---------- 渲染：今天 ---------- */
+function renderToday() {
+  const t = today(), dno = dayNoOf(t), d = kd(dno);
+  const r = reqs();
+  let h = '';
+
+  h += '<div class="card"><h3>🎧 口语 · ' + (dno ? 'Day ' + dno + '/30' : '不在计划区间') + '</h3>';
+  if (d) {
+    h += '<div class="sub">' + esc(d.t) + ' · 今天产出：' + esc(d.out) + '</div>';
+    h += '<div class="row"><span class="num" id="tm-read">' + mmss(S.day.read) + '</span>'
+      + '<span class="lab">跟读 <span class="tiny">需 25:00 · 前台计时</span></span>'
+      + '<button class="btn ' + (S.day.run === 'read' ? 'on' : 'pri') + '" onclick="toggleTimer(\'read\')">' + (S.day.run === 'read' ? '暂停' : '开始') + '</button></div>';
+    h += '<div class="row"><span class="num">' + (S.day.aud >= 1 ? '<span class="ok">✓</span>' : S.day.aud) + '</span>'
+      + '<span class="lab">音频听完整 1 遍 <span class="tiny">' + (K30AUDIO[dno] ? K30AUDIO[dno][S.voice].sec + ' 秒/遍' : '') + '</span></span>'
+      + '<button class="btn ' + (S.day.aud >= 1 ? '' : 'pri') + '" onclick="openDay(' + dno + ')">' + (S.day.aud >= 1 ? '再听' : '跟读') + '</button></div>';
+    h += '<div class="row"><span class="num" id="tm-rec">' + (S.day.rec || 0) + ' 秒</span>'
+      + '<span class="lab">开口录音 <span class="tiny">需 ≥30 秒</span></span>'
+      + '<button class="btn ' + (mr && mr.state === 'recording' ? 'on' : 'pri') + '" onclick="recToggle()">' + (mr && mr.state === 'recording' ? '停止' : '录音') + '</button></div>';
+    h += '<div class="row"><span class="num" id="tm-talk">' + mmss(S.day.talk) + '</span>'
+      + '<span class="lab">对话 <span class="tiny">墙钟计时 · 可切到豆包</span></span>'
+      + '<button class="btn ' + (S.day.run === 'talk' ? 'on' : '') + '" onclick="toggleTimer(\'talk\')">' + (S.day.run === 'talk' ? '暂停' : '开始') + '</button></div>';
+    h += '<div class="two" style="margin-top:10px"><button class="btn pri" onclick="openDay(' + dno + ')">看今天三句话 / 跟读</button>'
+      + '<button class="btn" onclick="copyAsk(' + dno + ')">复制开场句给豆包</button></div>';
+  } else {
+    h += '<div class="sub">口语 30 天计划运行期 2026-09-14 ~ 2026-10-13。当前不在区间内。</div>';
+  }
+  h += '</div>';
+
+  /* AI 安全 */
+  const c = curMonth();
+  h += '<div class="card"><h3>🛡 AI 安全学习</h3>';
+  if (c.m) {
+    const done = asDoneCount(c.m);
+    h += '<div class="sub">' + (c.future ? '距开始 ' + diffDays(t, c.m.m + '-01') + ' 天 · ' : '本月 · ') + '<b>' + c.m.m + '</b> ' + esc(c.m.t) + '</div>';
+    h += '<div class="row"><span class="num" id="tm-as">' + mmss(S.day.as) + '</span>'
+      + '<span class="lab">学习计时 <span class="tiny">满 30 分钟记 1 次</span></span>'
+      + '<button class="btn ' + (S.day.run === 'as' ? 'on' : 'pri') + '" onclick="toggleTimer(\'as\')">' + (S.day.run === 'as' ? '暂停' : '开始') + '</button></div>';
+    h += '<div class="row"><span class="num">' + asWeekDone() + '/' + AI_SEC.weeklyGoal + '</span><span class="lab">本周次数 <span class="tiny">周一为一周起点</span></span>'
+      + '<button class="btn" onclick="openMonth(\'' + c.m.m + '\')">月度条目</button></div>';
+    h += '<div class="bar"><i style="width:' + Math.round(done / c.m.tasks.length * 100) + '%"></i></div>';
+    h += '<div class="tiny">月目标：' + esc(c.m.goal) + ' · 条目 ' + done + '/' + c.m.tasks.length + '</div>';
+  } else h += '<div class="sub">12 个月计划（2026-10 ~ 2027-09）尚未开始</div>';
+  h += '</div>';
+
+  /* 学业 */
+  const evs = eventsOn(t);
+  h += '<div class="card"><h3>📚 学业 · 今天</h3>';
+  if (evs.length) {
+    evs.forEach(e => {
+      const needCk = (e.k === 'hard' || e.k === 'exam');
+      h += '<div class="row"><span class="num">' + (needCk ? (S.acad[t] ? '<span class="ok">✓</span>' : '<span class="warn">!</span>') : '·') + '</span>'
+        + '<span class="lab">' + esc(e.t) + ' <span class="tiny">' + esc(e.time || '') + '</span></span>'
+        + (needCk ? '<button class="btn ' + (S.acad[t] ? '' : 'pri') + '" onclick="acadCk()">' + (S.acad[t] ? '已确认' : '确认完成') + '</button>' : '') + '</div>';
+    });
+  } else h += '<div class="sub">今天没有课/考试/截止事项</div>';
+  const up = upcoming(t, 4);
+  if (up.length) {
+    h += '<div class="tiny" style="margin-top:10px">接下来</div>';
+    up.forEach(e => { h += '<div class="row"><span class="num">' + diffDays(t, e.d) + '<span class="tiny">天</span></span><span class="lab">' + esc(e.t) + ' <span class="tiny">' + e.d.slice(5) + (e.time ? ' ' + e.time : '') + '</span></span></div>'; });
+  }
+  h += '<button class="btn" style="width:100%;margin-top:10px" onclick="openAcad()">全部课程 / 考试 / 截止日</button></div>';
+
+  $('#main').innerHTML = h;
+}
+
+/* ---------- 渲染：打卡条 ---------- */
+function renderCk() {
+  const r = reqs(), done = !!S.ck[today()];
+  let h = '<div class="l">';
+  r.hard.concat(r.soft).forEach(x => {
+    h += '<span class="' + (x.ok ? 'ok' : '') + '"><i class="' + (x.ok ? 'g' : '') + '"></i>' + esc(x.sl || x.t) + '</span>';
+  });
+  h += '</div>';
+  if (!done && S.day.rec < REC_MIN && !S.day.sRec) {
+    h += '<div class="self" onclick="selfRec()">麦克风用不了？点这里走自证（音频听满 2 遍）</div>';
+  }
+  if (done) {
+    const c = S.ck[today()];
+    h += '<button class="btn wide" style="border-color:#1f6b46;color:#3ddc84">✅ 今日已打卡（' + (c.full ? '满勤' : '底线') + '）· 连续 ' + streak() + ' 天 · 不可撤销</button>';
+  } else {
+    const ok = canCk();
+    const miss = r.hard.filter(x => !x.ok).length + (S.strict ? r.soft.filter(x => !x.ok).length : 0);
+    h += '<button class="btn wide ' + (ok ? 'pri' : '') + '" ' + (ok ? '' : 'disabled') + ' onclick="doCk()">'
+      + (ok ? '✅ 完成，打卡' : '还差 ' + miss + ' 项 · 不能打卡') + '</button>';
+  }
+  $('#ck').innerHTML = h;
+}
+
+/* ---------- 渲染：日历 ---------- */
+let calY = 0, calM = 0;
+function renderCal() {
+  if (!calY) { const t = dn(today()); calY = t.getFullYear(); calM = t.getMonth(); }
+  const first = new Date(calY, calM, 1), start = (first.getDay() + 6) % 7;
+  const days = new Date(calY, calM + 1, 0).getDate();
+  let h = '<div class="card"><h3>📅 ' + calY + ' 年 ' + (calM + 1) + ' 月</h3>';
+  h += '<div class="two" style="margin-bottom:8px"><button class="btn" onclick="calMove(-1)">‹ 上月</button><button class="btn" onclick="calMove(1)">下月 ›</button></div>';
+  h += '<table class="cal"><tr><th>一</th><th>二</th><th>三</th><th>四</th><th>五</th><th>六</th><th>日</th></tr>';
+  let cell = 0, row = '<tr>';
+  for (let i = 0; i < start; i++) { row += '<td></td>'; cell++; }
+  for (let d = 1; d <= days; d++) {
+    const k = calY + '-' + String(calM + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+    const evs = eventsOn(k);
+    const dots = [];
+    if (S.ck[k]) dots.push('g');
+    if (evs.some(e => e.k === 'exam')) dots.push('a');
+    if (evs.some(e => e.k === 'hard')) dots.push('r');
+    if (evs.some(e => e.k === 'class')) dots.push('b');
+    const cls = ['cell'];
+    if (k === today()) cls.push('today');
+    if (S.ck[k]) cls.push('ck');
+    if (dn(k) < dn(today()) && !S.ck[k] && dayNoOf(k)) cls.push('mute');
+    row += '<td><div class="' + cls.join(' ') + '" onclick="openDayView(\'' + k + '\')">' + d
+      + '<span class="dots">' + dots.slice(0, 4).map(c => '<i class="' + c + '"></i>').join('') + '</span></div></td>';
+    cell++;
+    if (cell % 7 === 0) { row += '</tr>'; h += row; row = '<tr>'; }
+  }
+  if (cell % 7 !== 0) { while (cell % 7 !== 0) { row += '<td></td>'; cell++; } row += '</tr>'; h += row; }
+  h += '</table>';
+  h += '<div class="tiny" style="margin-top:8px"><i style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green)"></i> 已打卡 &nbsp; <i style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--blue)"></i> 上课 &nbsp; <i style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--amber)"></i> 考试 &nbsp; <i style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--red)"></i> 硬截止</div>';
+  h += '</div>';
+  $('#main').innerHTML = h;
+}
+function calMove(n) { calM += n; if (calM < 0) { calM = 11; calY--; } if (calM > 11) { calM = 0; calY++; } renderCal(); }
+
+/* ---------- 渲染：计划 ---------- */
+function renderPlan() {
+  let h = '';
+  h += '<div class="card"><h3>🎧 口语 30 天</h3><div class="sub">2026-09-14 ~ 10-13 · 每天三段（跟读 25′ / 开口 35′ / 对话 30′）</div>';
+  h += '<button class="btn pri" style="width:100%" onclick="openList()">打开 30 天清单</button></div>';
+  const c = curMonth();
+  h += '<div class="card"><h3>🛡 AI 安全 12 个月</h3><div class="sub">2026-10 ~ 2027-09 · 每周 2 次 × ≥30 分钟</div>';
+  AI_SEC.months.forEach(m => {
+    const done = asDoneCount(m), tot = m.tasks.length;
+    h += '<div class="row" onclick="openMonth(\'' + m.m + '\')"><span class="num tiny">' + m.m.slice(2) + '</span>'
+      + '<span class="lab">' + esc(m.t) + '<div class="tiny">' + done + '/' + tot + ' ' + (done === tot ? '✓' : '') + '</div></span>'
+      + '<span class="chip">' + (m.m === (c.m && c.m.m) ? '当前' : '') + '</span></div>';
+  });
+  h += '</div>';
+  h += '<div class="card"><h3>📚 学业 · ' + esc(ACAD.term) + '</h3><div class="sub">7 门课 · 考试与硬截止</div>';
+  h += '<button class="btn pri" style="width:100%" onclick="openAcad()">打开课程 / 考试 / 截止日</button></div>';
+  $('#main').innerHTML = h;
+}
+
+/* ---------- 渲染：进度 ---------- */
+function renderProg() {
+  const t = today();
+  const keys = Object.keys(S.ck).sort();
+  let h = '';
+  h += '<div class="card"><h3>📈 打卡</h3>';
+  h += '<div class="kv"><span>连续天数</span><span><b class="ok">' + streak() + '</b> 天</span></div>';
+  h += '<div class="kv"><span>累计打卡</span><span>' + keys.length + ' 天</span></div>';
+  h += '<div class="kv"><span>今日</span><span>' + (S.ck[t] ? (S.ck[t].full ? '已打卡 · 满勤' : '已打卡 · 底线') : '<span class="warn">未打卡</span>') + '</span></div>';
+  const dno = dayNoOf(t);
+  h += '<div class="kv"><span>口语进度</span><span>' + (dno ? 'Day ' + dno + '/30（' + Math.round(dno / 30 * 100) + '%）' : '—') + '</span></div>';
+  const ws = weekStart(t);
+  h += '<div class="kv"><span>AI 安全本周</span><span>' + asWeekDone() + '/' + AI_SEC.weeklyGoal + ' 次</span></div>';
+  h += '</div>';
+
+  h += '<div class="card"><h3>🗓 最近 30 天</h3><div class="heat">';
+  for (let i = 29; i >= 0; i--) {
+    const k = ymd(new Date(dn(t).getTime() - i * 86400000));
+    h += '<i class="' + (S.ck[k] ? 'g' : (dayNoOf(k) ? 'b' : '')) + '" title="' + k + '"></i>';
+  }
+  h += '</div><div class="tiny" style="margin-top:8px">绿=已打卡 · 深绿=口语计划日但未打卡 · 灰=无计划</div></div>';
+
+  h += '<div class="card"><h3>🛡 AI 安全条目</h3>';
+  AI_SEC.months.forEach(m => {
+    const done = asDoneCount(m), tot = m.tasks.length;
+    h += '<div class="row"><span class="num tiny">' + m.m.slice(2) + '</span><span class="lab">' + esc(m.t)
+      + '<div class="bar" style="margin:4px 0 0"><i style="width:' + Math.round(done / tot * 100) + '%"></i></div></span>'
+      + '<span class="chip">' + done + '/' + tot + '</span></div>';
+  });
+  h += '</div>';
+
+  if (keys.length) {
+    h += '<div class="card"><h3>📝 打卡明细</h3>';
+    keys.slice(-14).reverse().forEach(k => {
+      const c = S.ck[k];
+      h += '<div class="row"><span class="num tiny">' + k.slice(5) + '</span><span class="lab">' + wk(k) + ' · 跟读 ' + mmss(c.read || 0) + ' / 对话 ' + mmss(c.talk || 0) + ' / 录音 ' + (c.rec || 0) + 's</span><span class="chip">' + (c.full ? '满勤' : '底线') + '</span></div>';
+    });
+    h += '</div>';
+  }
+  $('#main').innerHTML = h;
+}
+
+/* ---------- 渲染：设置 ---------- */
+function renderSet() {
+  let h = '<div class="card"><h3>⚙️ 设置</h3>';
+  h += '<div class="kv"><span>声音</span><span>' + (S.voice === 'ava' ? '女声 Ava' : '男声 Andrew') + '</span></div>';
+  h += '<div class="sw" style="margin-bottom:10px"><button class="' + (S.voice === 'ava' ? 'on' : '') + '" onclick="setV(\'ava\')">女声 Ava</button><button class="' + (S.voice === 'andrew' ? 'on' : '') + '" onclick="setV(\'andrew\')">男声 Andrew</button></div>';
+  h += '<div class="kv"><span>朗读速度</span><span>' + S.rate + '×</span></div>';
+  h += '<div class="sw"><button class="' + (S.rate === 0.7 ? 'on' : '') + '" onclick="setR(0.7)">0.7</button><button class="' + (S.rate === 0.85 ? 'on' : '') + '" onclick="setR(0.85)">0.85</button><button class="' + (S.rate === 1 ? 'on' : '') + '" onclick="setR(1)">1.0</button><button class="' + (S.rate === 1.15 ? 'on' : '') + '" onclick="setR(1.15)">1.15</button></div>';
+  h += '</div>';
+
+  h += '<div class="card"><h3>🔒 打卡规则</h3>';
+  h += '<div class="sub">' + (S.strict ? '严格模式：软项也必须有（对话 30′ / AI 安全 / 学业）' : '底线模式：跟读 25′ + 音频听完 + 录音 ≥30 秒 即可打卡') + '</div>';
+  h += '<div class="sw"><button class="' + (!S.strict ? 'on' : '') + '" onclick="setStrict(false)">底线模式</button><button class="' + (S.strict ? 'on' : '') + '" onclick="setStrict(true)">严格模式</button></div>';
+  h += '<div class="tiny" style="margin-top:10px">硬证据（红）：跟读前台计时、音频听完一遍、开口录音 —— 没法糊弄。<br>软项（黄）：对话计时（要切到豆包，只能墙钟计时）、AI 安全次数、学业确认。</div>';
+  h += '</div>';
+
+  h += '<div class="card"><h3>🔔 提醒</h3><div class="sub">网页版不能主动推送通知。建议手机日历每天设一个「' + S.remind + ' 打开今日打卡」的重复提醒。</div>';
+  h += '<div class="sw"><button class="" onclick="alert(\'在 iPhone「时钟→闹钟」或「日历→新建重复事件」设每天 ' + S.remind + ' 即可\')">查看设置方法</button></div></div>';
+
+  h += '<div class="card"><h3>💾 数据</h3><div class="tiny">全部数据只存在这台手机的浏览器里，不上传、无账号。</div>';
+  h += '<div class="two" style="margin-top:10px"><button class="btn" onclick="exportData()">导出 JSON</button><button class="btn" onclick="wipe()">清空全部</button></div></div>';
+
+  h += '<div class="card"><h3>ℹ️ 关于</h3><div class="tiny">今日 · 我的计划中枢<br>把口语 30 天、AI 安全 12 个月、学业课程考试放进一个页面。<br>跟读音频复用已上线的神经语音包。</div></div>';
+  $('#main').innerHTML = h;
+}
+function setV(v) { S.voice = v; save(); if (curD) { const p = au.paused; au.src = audioURL(curD); if (!p) au.play().catch(() => { }); } renderSet(); }
+function setR(r) { S.rate = r; au.playbackRate = r; save(); renderSet(); }
+function setStrict(v) { S.strict = v; save(); renderSet(); renderCk(); }
+function exportData() {
+  const blob = new Blob([JSON.stringify(S, null, 1)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'hub-backup-' + today() + '.json'; a.click();
+  toast('已导出');
+}
+function wipe() { if (confirm('清空全部打卡与进度？不可恢复')) { S = blank(); save(); renderAll(); toast('已清空'); } }
+function acadCk() { S.acad[today()] = !S.acad[today()]; save(); renderAll(); }
+
+/* ---------- 二级页 ---------- */
+function showSub(kind, arg) {
+  if (kind === 'month') curMonthSub = arg;
+  $('#sub').classList.add('show');
+  const B = $('#subBody'), T = $('#subTtl');
+  window.scrollTo(0, 0); $('#sub').scrollTop = 0;
+  if (kind === 'day') {
+    const n = +arg, d = kd(n);
+    T.textContent = 'Day ' + n + ' · ' + (d ? d.t : '');
+    const au2 = K30AUDIO[n] || {}, vv = au2[S.voice] ? S.voice : 'ava';
+    const sec = au2[vv] ? au2[vv].sec : 0;
+    let h = '<div class="card"><h3>🎧 当日音频 · ' + sec + ' 秒</h3>';
+    h += '<div class="sub">' + (d ? esc(d.md) + ' · 今天产出：' + esc(d.out) : '') + '</div>';
+    h += '<div class="two"><button class="btn pri" onclick="playAudio(' + n + ')">▶ 播放 / 继续</button><button class="btn" onclick="pauseAudio()">⏸ 暂停</button></div>';
+    h += '<div class="two" style="margin-top:8px"><button class="btn" onclick="playAudio(' + n + ',0)">↺ 从头</button><button class="btn ' + (S.day.run === 'read' ? 'on' : 'pri') + '" onclick="toggleTimer(\'read\')">' + (S.day.run === 'read' ? '跟读计时中 · 暂停' : '开始跟读计时') + '</button></div>';
+    h += '<div class="tiny" style="margin-top:9px">今日跟读 <b id="tm-read">' + mmss(S.day.read) + '</b> / 25:00 ｜ 音频 ' + (S.day.aud >= 1 ? '<b class="ok">已听完 1 遍</b>' : '未听完') + '</div>';
+    h += '<div class="two" style="margin-top:9px"><button class="btn ' + (mr && mr.state === 'recording' ? 'on' : '') + '" onclick="recToggle()">' + (mr && mr.state === 'recording' ? '停止录音' : '🎙 录音（开口）') + '</button><button class="btn" onclick="toast(\'录音只做本地时长校验，不上传、不保存文件\')">?</button></div>';
+    h += '<div class="tiny" style="margin-top:6px">录音本次 <b id="tm-rec">' + (S.day.rec || 0) + '</b> 秒（需 ≥30 秒）</div>';
+    h += '</div>';
+
+    h += '<div class="card"><h3>📖 跟读句子（点句子跳过去）</h3>';
+    const L = sentLabels(n);
+    L.forEach((lab, i) => {
+      const tag = lab === 'm' ? '材料' : lab === 'ask' ? '开场句' : lab === 'trap' ? '卡壳' : '三句话';
+      const tx = lab === 'm' ? '材料第 ' + (i + 1) + ' 句' :
+        (lab === 'ask' ? esc(d.ask) : esc(sentText(n, lab, lab === 'trap' ? (i - (L.length - 6) - 1) : (i - (L.length - 3)))));
+      h += '<div class="sent" data-i="' + i + '" onclick="seekSent(' + n + ',' + i + ')"><span class="ix">' + (i + 1) + '</span><span class="tx"' + (lab === 'm' ? ' style="color:var(--dim)"' : '') + '>' + tx + '</span><span class="tag">' + tag + '</span></div>';
+    });
+    h += '<div class="tiny" style="margin-top:8px">材料全文在 kai30 里，这里给的是音频 + 今天要说的核心句。</div></div>';
+
+    h += '<div class="card"><h3>⭐ 今天带走的 3 句</h3>';
+    (d.sk || []).forEach(s => {
+      h += '<div class="q"><div class="en">' + esc(s[0]) + '</div><div class="zh">' + esc(s[1]) + '</div></div>';
+    });
+    const skTxt = (d.sk || []).map(x => x[0]).join(' ');
+    h += '<button class="btn" style="width:100%;margin-top:8px" onclick="copyIdx(' + buf(skTxt) + ')">复制三句</button></div>';
+
+    h += '<div class="card"><h3>⚠️ 预判卡壳</h3>';
+    (d.traps || []).forEach(t => { h += '<div class="q" style="border-color:var(--amber)"><div class="zh">' + esc(t[0]) + '</div><div class="en">' + esc(t[1]) + '</div></div>'; });
+    h += '</div>';
+
+    h += '<div class="card"><h3>💬 给豆包的开场句</h3><div class="q">' + esc(d.ask) + '</div>'
+      + '<button class="btn pri" style="width:100%" onclick="copyIdx(' + buf(d.ask) + ')">复制</button></div>';
+    B.innerHTML = h;
+  }
+  else if (kind === 'month') {
+    const m = AI_SEC.months.filter(x => x.m === arg)[0];
+    T.textContent = arg + ' · ' + m.t;
+    let h = '<div class="card"><h3>🎯 ' + esc(m.t) + '</h3><div class="sub">' + esc(m.goal) + '</div>';
+    m.tasks.forEach(tk => {
+      h += '<div class="row" onclick="asCk(\'' + tk.id + '\')"><span class="num">' + (S.asT[tk.id] ? '<span class="ok">✓</span>' : '○') + '</span><span class="lab">' + esc(tk.txt) + '</span></div>';
+    });
+    h += '<div class="tiny" style="margin-top:10px">勾选即记在本机。每月预算：每周 5 小时（3 个工作日晚上 ×1h + 周末碎片 2h）。</div></div>';
+    B.innerHTML = h;
+  }
+  else if (kind === 'list') {
+    T.textContent = '口语 30 天清单';
+    let h = '<div class="card">';
+    K30.forEach(d => {
+      const k = (2026) + '-' + String(+d.md.split('/')[0]).padStart(2, '0') + '-' + String(+d.md.split('/')[1]).padStart(2, '0');
+      const past = dn(k) < dn(today());
+      h += '<div class="row" onclick="openDay(' + d.d + ')"><span class="num tiny">' + esc(d.md) + '</span>'
+        + '<span class="lab">Day ' + d.d + ' · ' + esc(d.t) + '<div class="tiny">' + (d.out || '') + '</div></span>'
+        + '<span class="chip">' + (k === today() ? '今天' : (past ? '已过' : '')) + '</span></div>';
+    });
+    h += '</div>';
+    B.innerHTML = h;
+  }
+  else if (kind === 'acad') {
+    T.textContent = '课程 / 考试 / 截止日';
+    let h = '<div class="card"><h3>📚 课程表 · ' + esc(ACAD.term) + '</h3>';
+    ACAD.courses.forEach(c => {
+      h += '<div class="row"><span class="num">' + c.c + '</span><span class="lab">' + esc(c.n)
+        + '<div class="tiny">上课 ' + c.d.map(x => x.slice(5)).join(' · ') + (c.ex ? ' ｜ 考试 ' + c.ex.slice(5) : '') + '</div></span></div>';
+    });
+    h += '<div class="tiny" style="margin-top:10px">统一周末全天 9:00–12:00 / 13:00–17:30；每门课一结束就考；缺勤超 1/3 必修课需重修。</div></div>';
+    h += '<div class="card"><h3>⏰ 硬截止与事件</h3>';
+    ACAD.events.forEach(e => {
+      h += '<div class="row"><span class="num tiny">' + e.d.slice(5) + '</span><span class="lab">' + esc(e.t) + '<div class="tiny">' + esc(e.time || '') + ' · ' + wk(e.d) + ' · ' + (diffDays(today(), e.d) >= 0 ? diffDays(today(), e.d) + ' 天后' : '已过') + '</div></span></div>';
+    });
+    h += '</div>';
+    h += '<div class="card"><h3>😌 无课周末</h3><div class="tiny">' + ACAD.freebies.map(x => x.slice(5)).join(' · ') + '</div></div>';
+    B.innerHTML = h;
+  }
+  else if (kind === 'dayview') {
+    const k = arg;
+    T.textContent = fmtMD(k) + ' ' + wk(k);
+    const evs = eventsOn(k), dno = dayNoOf(k);
+    let h = '';
+    h += '<div class="card"><h3>' + (S.ck[k] ? '✅ 已打卡' : (dn(k) < dn(today()) ? '❌ 未打卡' : '· 未来')) + '</h3>';
+    if (S.ck[k]) h += '<div class="sub">跟读 ' + mmss(S.ck[k].read || 0) + ' · 对话 ' + mmss(S.ck[k].talk || 0) + ' · 录音 ' + (S.ck[k].rec || 0) + 's · ' + (S.ck[k].full ? '满勤' : '底线') + '</div>';
+    else h += '<div class="sub">' + (dn(k) < dn(today()) ? '这天没有打卡记录' : '还没到这一天') + '</div>';
+    h += '</div>';
+    if (dno) h += '<div class="card"><h3>🎧 口语 Day ' + dno + '</h3><div class="sub">' + esc(kd(dno).t) + '</div><button class="btn pri" style="width:100%" onclick="openDay(' + dno + ')">打开这天</button></div>';
+    h += '<div class="card"><h3>📌 这天的事</h3>';
+    if (evs.length) evs.forEach(e => { h += '<div class="row"><span class="num">·</span><span class="lab">' + esc(e.t) + '<div class="tiny">' + esc(e.time || '') + '</div></span></div>'; });
+    else h += '<div class="sub">没有课 / 考试 / 截止事项</div>';
+    h += '</div>';
+    B.innerHTML = h;
+  }
+}
+function hideSub() { $('#sub').classList.remove('show'); curSent = -1; }
+function openDay(n) { history.pushState({ sub: 'day', arg: n }, ''); showSub('day', n); }
+function openMonth(m) { history.pushState({ sub: 'month', arg: m }, ''); showSub('month', m); }
+function openList() { history.pushState({ sub: 'list' }, ''); showSub('list'); }
+function openAcad() { history.pushState({ sub: 'acad' }, ''); showSub('acad'); }
+function openDayView(k) { history.pushState({ sub: 'dayview', arg: k }, ''); showSub('dayview', k); }
+const COPYBUF = [];
+function buf(s) { COPYBUF.push(String(s == null ? '' : s)); return COPYBUF.length - 1; }
+function copyIdx(i) { copyTxt(COPYBUF[i] || ''); }
+function selfRec() { S.day.sRec = !S.day.sRec; save(); renderAll(); toast(S.day.sRec ? '已开自证：今日音频听满 2 遍即可' : '已关闭自证'); }
+function pauseAudio() { au.pause(); }
+function asCk(id) { S.asT[id] = !S.asT[id]; save(); renderAll(); if (curMonthSub) showSub('month', curMonthSub); }
+let curMonthSub = '';
+function copyTxt(s) {
+  const t = typeof s === 'string' ? s : String(s);
+  if (navigator.clipboard) navigator.clipboard.writeText(t).then(() => toast('已复制'), () => toast('复制失败'));
+  else { const a = document.createElement('textarea'); a.value = t; document.body.appendChild(a); a.select(); document.execCommand('copy'); a.remove(); toast('已复制'); }
+}
+function copyAsk(n) { const d = kd(n); if (d) copyTxt(d.ask); }
+
+/* ---------- 主渲染 ---------- */
+const TABS = ['today', 'cal', 'plan', 'prog', 'set'];
+function renderPane() {
+  const t = S.tab || 'today';
+  if (t === 'today') renderToday();
+  else if (t === 'cal') renderCal();
+  else if (t === 'plan') renderPlan();
+  else if (t === 'prog') renderProg();
+  else renderSet();
+  const hasc = t === 'today';
+  document.body.classList.toggle('hasc', hasc);
+  $('#ck').style.display = hasc ? 'block' : 'none';
+}
+function renderAll() { rollover(); renderHdr(); renderPane(); if (S.tab === 'today') renderCk(); }
+function setTab(t) {
+  if (TABS.indexOf(t) < 0) t = 'today';
+  S.tab = t; save();
+  $$('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
+  renderPane(); if (t === 'today') renderCk();
+}
+
+/* ---------- 路由 ---------- */
+$$('#tabs button').forEach(b => b.addEventListener('click', () => {
+  if (b.dataset.t === S.tab) { history.pushState({ t: S.tab }, ''); return; }
+  history.pushState({ t: b.dataset.t }, ''); setTab(b.dataset.t);
+}));
+$('#subBack').addEventListener('click', () => history.back());
+history.replaceState({ t: 'today' }, '');
+history.pushState({ t: 'today' }, '');
+window.addEventListener('popstate', e => {
+  const s = e.state || {};
+  if (s.sub) { showSub(s.sub, s.arg); return; }
+  if (s.t) { hideSub(); setTab(s.t); return; }
+  history.pushState({ t: S.tab || 'today' }, '');
+  toast('已在首页 · 再按一次返回');
+});
+
+/* ---------- 启动 ---------- */
+rollover();
+setTab(S.tab || 'today');
+renderAll();
+setInterval(() => { rollover(); renderHdr(); if (S.tab === 'today') renderCk(); }, 30000);
+window.addEventListener('focus', () => { rollover(); renderAll(); });
+
+</script>
+</body>
+</html>
